@@ -7,7 +7,7 @@ import { ManagerService } from 'src/manager-sys/manager/manager.service';
 import { delay } from 'src/manager-sys/util/delay';
 
 @Injectable()
-export class ServiceCService extends BaseService {
+export class ServiceCHelper extends BaseService {
     constructor(
         protected readonly managerService: ManagerService,
         protected readonly cls: ClsService
@@ -15,9 +15,19 @@ export class ServiceCService extends BaseService {
         super()
     }
 
-    @UseCls(Helper.clsBuilder('ServiceC', 'processRT'))
+    @UseCls(Helper.clsBuilder('ServiceC', 'processHelper'))
     @Helper.AutoManage
-    public async processRT() {
-        await delay(5, 40);
+    public async processHelper() {
+        await this.helpSomething();
+    }
+
+    private async helpSomething() {
+        await delay(10,20);
+        this.log('25% done')
+        await delay(10,20);
+        this.log('50% done')
+        await delay(10,20);
+        this.log('75% done')
+        await delay(10,20);
     }
 }

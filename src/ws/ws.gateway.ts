@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid'
 import { NewTaskLogRequestDTO, TaskLogRequestDTO } from './dto/task-log-request.dto';
 
 // TODO: Error handling + websocket context error 전파 어떻게 할까.
-@WebSocketGateway(3037, { namespace: 'ws' , cors: true})
+@WebSocketGateway(3030, { namespace: 'ws' , cors: true})
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()
   private server: Server;
