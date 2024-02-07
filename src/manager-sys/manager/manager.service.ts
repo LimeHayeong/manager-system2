@@ -3,6 +3,8 @@ import { WsGateway } from 'src/ws/ws.gateway';
 import { Task } from '../types/task';
 import { LoggerService } from '../logger/logger.service';
 import { v4 as uuid } from 'uuid'
+import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
+import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
 
 const newTasks: Task.TaskStatewithLogs[] = [
     {
@@ -65,7 +67,7 @@ export class ManagerService {
     public async buildTask(taskId: Task.ITaskIdentity): Promise<boolean> {
         // Task 유효성 검사, build level에 문제가 없으면 향후에는 검사 안 함. (고정된 값을 쓰기 때문)
         const currentTask = this.getTaskState(taskId);
-        if(currentTask === undefined) { 
+        if(currentTask == null) { 
             // task가 없으면, false 반환
             // Q. 맞을까? 이러면 미리 다 선언하긴 해야함.
             console.log(`[System] task not found - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
@@ -83,7 +85,7 @@ export class ManagerService {
             console.log(`[System] task is already in progress - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
         }
-        
+
         return true
     }
 
@@ -113,8 +115,11 @@ export class ManagerService {
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         this.logTransfer(newLog);
         
-        // TODO: wsGateway 작성
-        this.wsGateway.taskStateUpdate();
+        // wsGateway 데이터 전송
+        const eventData = {
+            taskStates: this.getTaskStatesNoLogs()
+        }
+        this.wsGateway.emitTaskStateUpdate(eventData);
     }
 
     // Task 진행 중 로그 추가
@@ -155,14 +160,17 @@ export class ManagerService {
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         this.logTransfer(newLog);
 
-        // TODO: wsGateway 작성
-        this.wsGateway.taskStateUpdate();
+        // wsGateway 데이터 전송
+        const eventData = {
+            taskStates: this.getTaskStatesNoLogs()
+        }
+        this.wsGateway.emitTaskStateUpdate(eventData);
     };
 
     private getTaskState(taskId: Task.ITaskIdentity): Task.TaskStatewithLogs {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
-            return undefined
+            return null
         }else{
             return this.taskStates[taskIdx];
         }
@@ -199,5 +207,65 @@ export class ManagerService {
 
     private async logTransferNoConsole(log: Task.Log){
         this.logger.pushFileLog(log);
+    }
+
+    // taskStates에서 recentLogs를 제외하고 return
+    private getTaskStatesNoLogs() {
+        return this.taskStates.map(taskState => {
+            const { recentLogs, ...rest } = taskState;
+            return rest;
+        })
+    }
+
+
+    public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
+        return {
+            taskStates: this.getTaskStatesNoLogs()
+        }
+    }
+
+    public async wsGetTaskLogs(taskId: Task.ITaskIdentity): Promise<TaskStateWithSeqLogsDTO> {
+        let eventData;
+        const taskIdx = this.findTask(taskId);
+        if(taskIdx === -1){
+            // 찾는 task가 없으면,
+            eventData = null;
+        }else{
+            const currentTask = this.taskStates[taskIdx];
+            const lastLogSeq = currentTask.recentLogs[currentTask.recentLogs.length - 1].length - 1;
+            eventData = {
+                ...currentTask,
+                lastLogSeq
+            }
+        }
+        return eventData;
+    }
+
+    public async wsGetNewTaskLogs(domain: string, task: string, taskType: Task.TaskType, startLogSeq: number): Promise<TaskStateWithNewLogsDTO> {
+        let eventData;
+        // console.log(domain, task, taskType, startLogSeq)
+        const taskIdx = this.findTask({ domain, task, taskType });
+        if(taskIdx === -1){
+            // 찾는 task가 없으면,
+            eventData = null;
+        }else{
+            const currentTask = this.taskStates[taskIdx];
+            const recentLogIdx = currentTask.recentLogs.length - 1;
+            const lastLogSeq = currentTask.recentLogs[recentLogIdx].length;
+            if(startLogSeq > lastLogSeq){
+                // 요청 Log가 현재 로그보다 크면, context가 꼬인건데...?
+                console.log(`[System] Log sequence error - ${domain}:${task}:${taskType}`)
+                eventData = null;
+            }else{
+                const logs = currentTask.recentLogs[recentLogIdx].slice(startLogSeq, lastLogSeq);
+                const { recentLogs, ...remain } = currentTask;
+                eventData = {
+                    ...remain,
+                    lastLogSeq,
+                    reqLogs: logs
+                }
+            }
+        }
+        return eventData;
     }
 }
