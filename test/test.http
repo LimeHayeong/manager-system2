@@ -3,4 +3,21 @@
 ### hi
 
 ### Service A Trigger.
-GET http://{{URL}}:{{PORT}}/service-a/start HTTP/1.1
+POST http://{{URL}}:{{PORT}}/serviceA/start HTTP/1.1
+Content-Type: application/json; charset=UTF-8
+
+{
+    "domain": "ServiceA",
+    "task": "processRT"
+}
+
+### Service A Activator.
+POST http://{{URL}}:{{PORT}}/serviceA/activate HTTP/1.1
+Content-Type: application/json; charset=UTF-8
+
+{
+    "domain": "ServiceA",
+    "task": "processRT",
+    "taskType": "TRIGGER",
+    "active": true
+}

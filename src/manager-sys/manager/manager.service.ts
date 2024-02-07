@@ -1,4 +1,4 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { WsGateway } from 'src/ws/ws.gateway';
 import { Task } from '../types/task';
 import { LoggerService } from '../logger/logger.service';
@@ -60,6 +60,46 @@ export class ManagerService {
         newWorks.forEach(newWork => this.workStates.push(newWork));
 
         console.log('[System] ManagerService initialized');
+    }
+
+    // Task를 활성화하거나 비활성화함.
+    // activate가 true인 경우 활성화, false인 경우 비활성화
+    // HTTP context.
+    public controlTask(taskId: Task.ITaskIdentity, activate: boolean) {
+        const taskIdx = this.findTask(taskId);
+        if(taskIdx === -1){
+            // 찾는 task가 없으면,
+            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`)
+        }else{
+            if(this.taskStates[taskIdx].isAvailable === activate){
+                // 이미 활성화/비활성화 되어있으면, 
+                throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 이미 ${activate ? '활성화' : '비활성화'} 되어있습니다.`)
+            }
+            this.taskStates[taskIdx].isAvailable = activate;
+        }
+    }
+
+    public isActivated(taskId: Task.ITaskIdentity) {
+        const taskIdx = this.findTask(taskId);
+        if(this.taskStates[taskIdx].isAvailable === false){
+            throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 비활성화 되어있습니다.`)
+        }
+    }
+
+    // HTTP Context.
+    public isRunning(taskId: Task.ITaskIdentity) {
+        const taskIdx = this.findTask(taskId);
+        if(this.taskStates[taskIdx].status === Task.TaskStatus.PROGRESS){
+            throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 이미 실행 중입니다.`)
+        }
+    }
+
+    // HTTP Context.
+    public isValidTask(taskId: Task.ITaskIdentity) {
+        const taskIdx = this.findTask(taskId);
+        if(taskIdx === -1){
+            throw new NotFoundException(`${taskId.domain}:${taskId.task}를 찾을 수 없습니다.`);
+        }
     }
 
     // Task를 시작하기 전에 실행 가능한지 확인하는 함수.

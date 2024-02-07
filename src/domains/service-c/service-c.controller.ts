@@ -1,4 +1,4 @@
 import { Controller } from '@nestjs/common';
 
-@Controller('service-c')
+@Controller('serviceC')
 export class ServiceCController {}

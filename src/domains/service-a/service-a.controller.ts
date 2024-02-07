@@ -1,34 +1,44 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseFilters } from '@nestjs/common';
 
 import { ServiceAService } from './service-a.service';
-import { ApiError, ApiResponse } from 'src/manager-sys/types/api.response';
+import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../common-dto/task-control.dto';
+import { Request, Response } from 'express';
+import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
+import { ApiResponse } from 'src/manager-sys/types/api.response';
 
-@Controller('service-a')
+@UseFilters(HttpExceptionFilter)
+@Controller('serviceA')
 export class ServiceAController {
-    constructor(private readonly serviceAService: ServiceAService) {}
+    constructor(
+        private readonly service: ServiceAService) {}
 
-    // TODO: 이 부분 build, start시 오류를 어떻게 잘 전달할까 고민해보자.
-    @Get('/start')
-    triggerProcessRT(
-        @Req() req,
-        @Res() res
+    @Post('/start')
+    async triggerTask(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Body() data: TaskStartRequestDTO,
     ) {
-        let response: ApiResponse | ApiError;
-        try {
-            this.serviceAService.processRT('TRIGGER');
-            
-            response = {
-                success: true,
-                statusCode: 200,
-                message: `Task 시작 요청에 성공했습니다.`
-            };
-        } catch (e) {
-            response = {
-                success: false,
-                statusCode: 500,
-                message: `Task 시작 요청에 실패했습니다.`
-            };
+        const message = await this.service.triggerTask(data);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: message,
         }
-        res.status(response.statusCode).json(response);
+        res.status(200).json(response);
+    }
+
+    @Post('/activate')
+    async activateTask(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Body() data: TaskActivateRequestDTO,
+    ) {
+        const message = await this.service.activateTask(data);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: message,
+        }
+        res.status(200).json(response);
     }
 }
