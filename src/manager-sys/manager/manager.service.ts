@@ -224,12 +224,13 @@ export class ManagerService {
         }
     }
 
+    // TODO: error 조금 더 세련되게
     public async wsGetTaskLogs(taskId: Task.ITaskIdentity): Promise<TaskStateWithSeqLogsDTO> {
         let eventData;
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            eventData = null;
+            throw new Error(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`)
         }else{
             const currentTask = this.taskStates[taskIdx];
             const lastLogSeq = currentTask.recentLogs[currentTask.recentLogs.length - 1].length - 1;
@@ -241,21 +242,21 @@ export class ManagerService {
         return eventData;
     }
 
+    // TODO: error 조금 더 세련되게
     public async wsGetNewTaskLogs(domain: string, task: string, taskType: Task.TaskType, startLogSeq: number): Promise<TaskStateWithNewLogsDTO> {
         let eventData;
         // console.log(domain, task, taskType, startLogSeq)
         const taskIdx = this.findTask({ domain, task, taskType });
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            eventData = null;
+            throw new Error(`${domain}:${task}:${taskType}는 존재하지 않습니다.`)
         }else{
             const currentTask = this.taskStates[taskIdx];
             const recentLogIdx = currentTask.recentLogs.length - 1;
             const lastLogSeq = currentTask.recentLogs[recentLogIdx].length;
             if(startLogSeq > lastLogSeq){
                 // 요청 Log가 현재 로그보다 크면, context가 꼬인건데...?
-                console.log(`[System] Log sequence error - ${domain}:${task}:${taskType}`)
-                eventData = null;
+                throw new Error(`요청 Log seq number가 현재 로그보다 큽니다.`)
             }else{
                 const logs = currentTask.recentLogs[recentLogIdx].slice(startLogSeq, lastLogSeq);
                 const { recentLogs, ...remain } = currentTask;

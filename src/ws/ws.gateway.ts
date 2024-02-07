@@ -2,7 +2,7 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { Server, Socket } from 'socket.io'
 
 import { TaskStatesNoLogsDTO } from 'src/manager-sys/manager/dto/task-states.dto';
-import { WebSocketResponse } from 'src/manager-sys/types/ws.response';
+import { WebSocketError, WebSocketResponse } from 'src/manager-sys/types/ws.response';
 import { WsService } from './ws.service';
 import { v4 as uuid } from 'uuid'
 import { NewTaskLogRequestDTO, TaskLogRequestDTO } from './dto/task-log-request.dto';
@@ -55,13 +55,22 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
   async handleReloadTaskLog(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: TaskLogRequestDTO) {
-    // console.log(`[System] Client ${client.id} requested to reload task logs`);
-    const payload = await this.wsService.getTaskLogs(data);
-    const response: WebSocketResponse = {
-      success: true,
-      statusCode: 200,
-      responseId: uuid(),
-      payload: payload
+    let response: WebSocketResponse | WebSocketError;
+    try {
+      const payload = await this.wsService.getTaskLogs(data);
+      response = {
+        success: true,
+        statusCode: 200,
+        responseId: uuid(),
+        payload: payload
+      }
+    } catch (e) {
+      response = {
+        success: false,
+        statusCode: 404,
+        responseId: uuid(),
+        error: e.message
+      }
     }
     this.server.emit('reloadTaskLogResponse', response);
   }
@@ -70,15 +79,24 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
   async handleNewTaskLog(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: NewTaskLogRequestDTO) {
-    // console.log(`[System] Client ${client.id} requested to reload task logs`);
+    let response: WebSocketResponse | WebSocketError;
+    try {
       const payload = await this.wsService.getNewTaskLogs(data);
-      const response: WebSocketResponse = {
+      response = {
         success: true,
         statusCode: 200,
         responseId: uuid(),
         payload: payload
       }
-      this.server.emit('newTaskLogResponse', response);
+    } catch (e) {
+      response = {
+        success: false,
+        statusCode: 404,
+        responseId: uuid(),
+        error: e.message
+      }
+    }
+    this.server.emit('newTaskLogResponse', response);
   }
 
   public async emitTaskStateUpdate(data: TaskStatesNoLogsDTO) {
