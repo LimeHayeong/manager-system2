@@ -17,7 +17,7 @@ export namespace Task {
       END = 'END',
     }
   
-    export const enum TaskStatus {
+    export enum TaskStatus {
       TERMINATED = 'TERMINATED',
       PROGRESS = 'PROGRESS',
       WAITING = 'WAITING',
@@ -88,5 +88,12 @@ export namespace Task {
     export interface ITaskLogContext {
       recentLogs: Log[][];
     }
+
+    export function toEnumValue<T>(enumObj: T, value: string): T[keyof T] | undefined {
+        if (Object.values(enumObj).includes(value)) {
+          return value as T[keyof T];
+        }
+        return undefined;
+      }
   }
   

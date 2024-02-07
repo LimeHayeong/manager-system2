@@ -20,13 +20,13 @@ export class ServiceAController {
             response = {
                 success: true,
                 statusCode: 200,
-                message: `Task 시작에 성공했습니다.`
+                message: `Task 시작 요청에 성공했습니다.`
             };
         } catch (e) {
             response = {
                 success: false,
                 statusCode: 500,
-                message: `Task 시작에 실패했습니다.`
+                message: `Task 시작 요청에 실패했습니다.`
             };
         }
         res.status(response.statusCode).json(response);

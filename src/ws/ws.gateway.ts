@@ -6,4 +6,6 @@ export class WsGateway {
   handleMessage(client: any, payload: any): string {
     return 'Hello world!';
   }
+
+  taskStateUpdate() {}
 }

@@ -1,0 +1,6 @@
+@URL = 127.0.0.1
+@PORT = 3007
+### hi
+
+### Service A Trigger.
+GET http://{{URL}}:{{PORT}}/service-a/start HTTP/1.1

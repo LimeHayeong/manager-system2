@@ -51,7 +51,7 @@ export class LoggerService {
     // TODO: 파일 세분화
     public async fileBufferFlush() {
         try {
-            console.log('flushing log buffer: ' + this.fileBuffer.length);
+            console.log('[System] flushing log buffer: ' + this.fileBuffer.length);
 
             const data = this.fileBuffer.map(log => JSON.stringify(log)).join('\n')
 
@@ -73,13 +73,13 @@ export class LoggerService {
 
     public async consoleBufferFlush() {
         try {
-            console.log('[System] flushing console buffer: ' + this.consoleBuffer.length);
+            // console.log('[System] flushing console buffer: ' + this.consoleBuffer.length);
             // 검사구문 없으면 더 빠를텐데.
             this.consoleBuffer.map(log => {
                 if(typeof log.data !== 'string' && 'message' in log.data){
-                    console.log(`[${log.domain}:${log.task}][${log.level}][${log.logTiming}] ` + log.data.message)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data.message)
                 }else{
-                    console.log(`[${log.domain}:${log.task}][${log.level}][${log.logTiming}] ` + log.data)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data)
                 }
             });
             this.consoleBuffer = [];
