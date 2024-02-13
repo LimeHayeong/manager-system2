@@ -5,6 +5,7 @@ import { LoggerService } from '../logger/logger.service';
 import { v4 as uuid } from 'uuid'
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
+import { Helper } from '../util/helper';
 
 const newTasks: Task.TaskStatewithLogs[] = [
     {
@@ -129,7 +130,7 @@ export class ManagerService {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`)
+            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`, )
         }else{
             if(this.taskStates[taskIdx].isAvailable === activate){
                 // 이미 활성화/비활성화 되어있으면, 
@@ -137,6 +138,11 @@ export class ManagerService {
             }
             this.taskStates[taskIdx].isAvailable = activate;
         }
+    }
+
+    // @Helper.LogError
+    public async test() {
+        throw new Error('test');
     }
 
     public isActivated(taskId: Task.ITaskIdentity) {
@@ -155,6 +161,7 @@ export class ManagerService {
     }
 
     // HTTP Context.
+    @Helper.LogError
     public isValidTask(taskId: Task.ITaskIdentity) {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
@@ -190,6 +197,7 @@ export class ManagerService {
     }
 
     // Task 시작
+    @Helper.LogError
     public async startTask(taskId: Task.ITaskIdentity) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
@@ -319,6 +327,7 @@ export class ManagerService {
 
 
     public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
+        throw new Error('ws Error');
         return {
             taskStates: this.getTaskStatesNoLogs()
         }

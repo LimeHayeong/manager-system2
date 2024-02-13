@@ -37,7 +37,6 @@ export class ServiceDService extends BaseService {
                   }
                   return chainInfo;
                 } catch (e) {
-                  this.error(e);
                   return null;
                 }
               }),
@@ -45,7 +44,8 @@ export class ServiceDService extends BaseService {
         }
     }
 
-    private async doSomethingD(chainInfo: any) {
+    
+    public async doSomethingD(chainInfo: any) {
         try {
             await delay(0.01, 0.015)
             this.log(`[${chainInfo.chainName}] okay`);

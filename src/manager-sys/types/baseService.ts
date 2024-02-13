@@ -29,6 +29,7 @@ export abstract class BaseService {
     
         const taskId = { domain, task, taskType: Task.TaskType.TRIGGER}
         this.managerService.isValidTask(taskId)
+        await this.managerService.test();
         this.managerService.isRunning(taskId)
         this.managerService.isActivated(taskId)
     

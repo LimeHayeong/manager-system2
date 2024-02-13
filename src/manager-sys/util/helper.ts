@@ -44,10 +44,37 @@ export namespace Helper {
                     }
                 }
             } catch (e) {
-                console.error(e);
+                console.log('task helper catch: ' + e.stack);
+                throw e;
             }
         };
 
         return descriptor;
+    }
+
+    export function LogError(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
+        const method = descriptor.value; // 원래의 메서드
+    
+        descriptor.value = function (...args: any[]) {
+            try {
+                const result = method.apply(this, args);
+
+                // 반환값이 Promise인 경우 (비동기 함수)
+                if (result instanceof Promise) {
+                    return result.then(data => data).catch(error => {
+                        console.log(`[Async] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
+                        throw error;
+                    });
+                }
+
+                // 동기 함수인 경우
+                return result;
+            } catch (error) {
+                // Error.captureStackTrace(error, this.constructor);
+                // console.log(error.stack);
+                console.log(`[Sync] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
+                throw error;
+            }
+        };
     }
 }

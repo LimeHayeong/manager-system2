@@ -6,9 +6,12 @@ import { WebSocketError, WebSocketResponse } from 'src/manager-sys/types/ws.resp
 import { WsService } from './ws.service';
 import { v4 as uuid } from 'uuid'
 import { NewTaskLogRequestDTO, TaskLogRequestDTO } from './dto/task-log-request.dto';
+import { UseInterceptors } from '@nestjs/common';
+import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
 
 // TODO: Error handling + websocket context error 전파 어떻게 할까.
-@WebSocketGateway(3030, { namespace: 'ws' , cors: true})
+@WebSocketGateway(3031, { namespace: 'ws' , cors: { origin: '*' }})
+@UseInterceptors(CustomInterceptor)
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()
   private server: Server;
@@ -35,6 +38,7 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
       this.server.emit('connectResponse', response);
     } catch(e) {
       // TODO: Connection error handling
+      console.log('try catch here');
       console.error(e);
       client.disconnect();
     }
