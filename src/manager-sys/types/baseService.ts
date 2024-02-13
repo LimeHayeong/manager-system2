@@ -11,23 +11,17 @@ export abstract class BaseService {
   
     protected log(data: string) {
         const result: Task.IContext = {
-            message: data,
+            message: '',
         }
+        result.message = data;
       const context = this.cls.get('context');
       this.managerService.logTask(context, result, Task.LogLevel.INFO);
     }
 
-    protected warn(data: string,
-        options?: {
-            functionContext?: boolean
-        }) {
+    protected warn(data: string) {
         const result: Task.IContext = {
-            message: '',
-            functionContext: {}
+            message: ''
         };
-
-        const defaultOptions = { functionContext: true };
-        const effectiveOptions = { ...defaultOptions, ...options };
 
         const context = this.cls.get('context');
 
@@ -35,25 +29,19 @@ export abstract class BaseService {
             result.message = data;
         }
 
-        if(effectiveOptions.functionContext) {
-            result.functionContext = this.cls.get('functionContext');
-        }
-
         this.managerService.logTask(context, result, Task.LogLevel.WARN);
     }
 
     protected error(data: string | Error,
         options?: {
-            functionContext?: boolean,
             errorStack?: number
     }): void {
         const result: Task.IContext = {
             message: '',
-            functionContext: {},
             stack: []
         };
 
-        const defaultOptions = { functionContext: true, errorStack: 2 };
+        const defaultOptions = { errorStack: 2 };
         const effectiveOptions = { ...defaultOptions, ...options };
         if(effectiveOptions.errorStack < 0) effectiveOptions.errorStack = 0;
         if(effectiveOptions.errorStack > 7) effectiveOptions.errorStack = 7;
@@ -65,11 +53,7 @@ export abstract class BaseService {
         } else if (data instanceof Error) {
             result.message = data.message;
             result.stack = this.trimErrorStack(data, effectiveOptions.errorStack);
-        }
-
-        if(effectiveOptions.functionContext) {
-            result.functionContext = this.cls.get('functionContext');
-        }      
+        }   
 
         this.managerService.logTask(context, result, Task.LogLevel.ERROR);
     }

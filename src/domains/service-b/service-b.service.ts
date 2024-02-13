@@ -50,7 +50,6 @@ export class ServiceBService extends BaseService {
     @Cron('0 */3 * * * *')
     @UseCls(Helper.clsBuilder('ServiceB', 'processRT'))
     @Helper.AutoManage
-    @Helper.ContextMaker
     public async processRT() {
         await Promise.all(chains.map(async (chain) => {
             const chainMarketData = await this.doSomethingB(chain);
@@ -58,7 +57,6 @@ export class ServiceBService extends BaseService {
         }))
     }
 
-    @Helper.ContextMaker
     private async doSomethingB(chain: string) {
         await delay(3, 5);
         if (Math.random() < 1 / 20) {

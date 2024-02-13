@@ -56,7 +56,7 @@ export namespace Task {
     // 실행 중 그 순간에 대한 세부 context
     export interface IContext {
       message?: string;
-      functionContext?: any;
+      // functionContext?: any;
       stack?: string[];
     }
   

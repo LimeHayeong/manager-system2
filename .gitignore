@@ -37,3 +37,7 @@ lerna-debug.log*
 # local test code
 /test
 /test/*
+
+# log files
+log.json
+log2.json

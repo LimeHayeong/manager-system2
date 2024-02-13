@@ -77,16 +77,4 @@ export namespace Helper {
     //         }
     //     };
     // }
-
-    // Logging을 위해 함수의 context를 cls에 저장하는 helper decorator
-    export function ContextMaker(target: any, propertyName: string, descriptor: PropertyDescriptor) {
-        const originalMethod = descriptor.value;
-        descriptor.value = async function(...args: any[]) {
-            this.cls.set('functionContext', {
-                functionName: propertyName,
-                functionArgs: args
-            })
-            await originalMethod.apply(this, args);
-        };
-    }
 }

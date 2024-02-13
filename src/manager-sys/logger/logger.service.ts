@@ -6,7 +6,7 @@ import { Task } from '../types/task';
 // TODO: CONFIG화
 const fileInterval = 5000;
 const consoleInterval = 1000;
-const tempfilename = 'log.json'
+const tempfilename = 'log2.json'
 
 // TODO: Error handling
 @Injectable()
@@ -43,7 +43,6 @@ export class LoggerService {
                 this.fileBufferFlush();
             }
           } catch (e) {
-          
           }
     }
 
@@ -76,7 +75,9 @@ export class LoggerService {
             // console.log('[System] flushing console buffer: ' + this.consoleBuffer.length);
             // 검사구문 없으면 더 빠를텐데.
             this.consoleBuffer.map(log => {
-                if(typeof log.data !== 'string' && 'message' in log.data){
+                if(log.data === null){
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] `)
+                } else if(typeof log.data !== 'string' && 'message' in log.data){
                     console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data.message)
                 }else{
                     console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data)

@@ -24,7 +24,6 @@ export class ServiceAService extends BaseService{
     @Cron('0/20 * * * * *')
     @UseCls(Helper.clsBuilder('ServiceA', 'processRT'))
     @Helper.AutoManage
-    @Helper.ContextMaker
     public async processRT(context?: string) {
         const promiseInfo = [];
 
@@ -53,18 +52,16 @@ export class ServiceAService extends BaseService{
     }
 
     // 무언가를 하는 dummy function, 약 1,2초 걸림.
-    @Helper.ContextMaker
     private async doSomethingA(chainInfo: any) {
         try {
             await delay(1,2);
             this.log(`[${chainInfo.chainName}] okay`);
         } catch (e) {
-            this.error(e.message);
+            this.error(e);
         }
     }
 
     // 무언가를 하는 dummy function, 약 1,2초 걸림. 1/10 확률로 price가 null임.
-    @Helper.ContextMaker
     private async doSomethingA2(chain: string) {
         await delay(1,2);
         if (Math.random() < 1 / 10) {
