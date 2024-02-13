@@ -10,7 +10,7 @@ import { UseInterceptors } from '@nestjs/common';
 import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
 
 // TODO: Error handling + websocket context error 전파 어떻게 할까.
-@WebSocketGateway(3031, { namespace: 'ws' , cors: { origin: '*' }})
+@WebSocketGateway(3030, { namespace: 'ws' , cors: { origin: '*' }})
 @UseInterceptors(CustomInterceptor)
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()

@@ -18,6 +18,8 @@ import { Response } from 'express'
         | { message: any; statusCode: number; error: string }
         | { message: string[]; statusCode: 400; error: string[] }
   
+      // console.log('httpExceptionFilter');
+
       const errorResponse: ApiError = {
         success: false,
         statusCode: status,

@@ -30,7 +30,7 @@ export namespace Task {
       contextId: { [key: string]: string };
       level: LogLevel;
       logTiming: LogTiming;
-      data: string | ErrorObject;
+      data: IContext | null;
       timestamp: number; // toISOString
     }
   
@@ -51,6 +51,13 @@ export namespace Task {
       endAt: number;
       // 그냥 identifier만 보관하자.
       taskList: ITaskIdentity[];
+    }
+
+    // 실행 중 그 순간에 대한 세부 context
+    export interface IContext {
+      message?: string;
+      functionContext?: any;
+      stack?: string[];
     }
   
     // Task 구별자와 실행 context, 최근 log가 담김 >> Manager service 용.

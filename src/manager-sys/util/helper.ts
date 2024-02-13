@@ -52,29 +52,41 @@ export namespace Helper {
         return descriptor;
     }
 
-    export function LogError(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
-        const method = descriptor.value; // 원래의 메서드
+    // export function LogError(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
+    //     const method = descriptor.value; // 원래의 메서드
     
-        descriptor.value = function (...args: any[]) {
-            try {
-                const result = method.apply(this, args);
+    //     descriptor.value = function (...args: any[]) {
+    //         try {
+    //             const result = method.apply(this, args);
 
-                // 반환값이 Promise인 경우 (비동기 함수)
-                if (result instanceof Promise) {
-                    return result.then(data => data).catch(error => {
-                        console.log(`[Async] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
-                        throw error;
-                    });
-                }
+    //             // 반환값이 Promise인 경우 (비동기 함수)
+    //             if (result instanceof Promise) {
+    //                 return result.then(data => data).catch(error => {
+    //                     console.log(`[Async] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
+    //                     throw error;
+    //                 });
+    //             }
 
-                // 동기 함수인 경우
-                return result;
-            } catch (error) {
-                // Error.captureStackTrace(error, this.constructor);
-                // console.log(error.stack);
-                console.log(`[Sync] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
-                throw error;
-            }
+    //             // 동기 함수인 경우
+    //             return result;
+    //         } catch (error) {
+    //             // Error.captureStackTrace(error, this.constructor);
+    //             // console.log(error.stack);
+    //             console.log(`[Sync] Error in ${propertyName} with arguments: ${JSON.stringify(args)}`);
+    //             throw error;
+    //         }
+    //     };
+    // }
+
+    // Logging을 위해 함수의 context를 cls에 저장하는 helper decorator
+    export function ContextMaker(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = async function(...args: any[]) {
+            this.cls.set('functionContext', {
+                functionName: propertyName,
+                functionArgs: args
+            })
+            await originalMethod.apply(this, args);
         };
     }
 }

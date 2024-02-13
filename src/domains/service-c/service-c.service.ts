@@ -17,6 +17,7 @@ export class ServiceCService extends BaseService {
 
     @UseCls(Helper.clsBuilder('ServiceC', 'processRT'))
     @Helper.AutoManage
+    @Helper.ContextMaker
     public async processRT() {
         await delay(5, 40);
     }

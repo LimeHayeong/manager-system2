@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
 import { WsGateway } from 'src/ws/ws.gateway';
 import { Task } from '../types/task';
 import { LoggerService } from '../logger/logger.service';
@@ -140,9 +140,9 @@ export class ManagerService {
         }
     }
 
-    // @Helper.LogError
     public async test() {
-        throw new Error('test');
+        // throw new Error('hi');
+        // throw new BadRequestException('test error')
     }
 
     public isActivated(taskId: Task.ITaskIdentity) {
@@ -161,7 +161,6 @@ export class ManagerService {
     }
 
     // HTTP Context.
-    @Helper.LogError
     public isValidTask(taskId: Task.ITaskIdentity) {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
@@ -197,7 +196,6 @@ export class ManagerService {
     }
 
     // Task 시작
-    @Helper.LogError
     public async startTask(taskId: Task.ITaskIdentity) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
@@ -219,7 +217,7 @@ export class ManagerService {
         }
 
         // 로그 추가 및 전송
-        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, '', dateNow);
+        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         this.logTransfer(newLog);
         
@@ -264,7 +262,7 @@ export class ManagerService {
         currentTask.updatedAt = dateNow
         currentTask.endAt = dateNow
 
-        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, '', dateNow);
+        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         this.logTransfer(newLog);
 
@@ -295,7 +293,7 @@ export class ManagerService {
     }
 
     // TODO: data- any 수정
-    private logFormat(taskId: Task.ITaskIdentity, contextId: string, level: Task.LogLevel, timing: Task.LogTiming, data: any, timestamp: number): Task.Log {
+    private logFormat(taskId: Task.ITaskIdentity, contextId: string, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
         return {
             domain: taskId.domain,
             task: taskId.task,
@@ -327,7 +325,6 @@ export class ManagerService {
 
 
     public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
-        throw new Error('ws Error');
         return {
             taskStates: this.getTaskStatesNoLogs()
         }
