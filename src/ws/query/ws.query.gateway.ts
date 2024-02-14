@@ -1,29 +1,26 @@
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io'
-
-import { TaskStatesNoLogsDTO } from 'src/manager-sys/manager/dto/task-states.dto';
-import { WebSocketError, WebSocketResponse } from 'src/manager-sys/types/ws.response';
-import { WsService } from './ws.service';
-import { v4 as uuid } from 'uuid'
-import { NewTaskLogRequestDTO, TaskLogRequestDTO } from './dto/task-log-request.dto';
 import { UseInterceptors } from '@nestjs/common';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
+import { WsQueryService } from './ws.query.service';
+import { v4 as uuid } from 'uuid';
+import { WebSocketError, WebSocketResponse } from 'src/manager-sys/types/ws.response';
+import { NewTaskLogRequestDTO, TaskLogRequestDTO } from '../dto/task-log-request.dto';
 
-// TODO: Error handling + websocket context error 전파 어떻게 할까.
-@WebSocketGateway(3031, { namespace: 'ws' , cors: { origin: '*' }})
+@WebSocketGateway(3031, { namespace: 'ws', cors: { origin: '*' }})
 @UseInterceptors(CustomInterceptor)
-export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
+export class WsQueryGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()
   private server: Server;
 
   constructor(
-    private readonly wsService: WsService,
+    private readonly wsService: WsQueryService,
   ) {}
 
   afterInit(server: Server) {
-    console.log('[System] Websocket gateway initialized');
+    console.log('[System] Websocket query-gateway initialized');
   }
-  
+
   async handleConnection(client: Socket, ...args: any[]) {
     console.log(`[System] Client connected: ${client.id}`);
     try {
@@ -101,15 +98,5 @@ export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect{
       }
     }
     this.server.emit('newTaskLogResponse', response);
-  }
-
-  public async emitTaskStateUpdate(data: TaskStatesNoLogsDTO) {
-    const response: WebSocketResponse = {
-      success: true,
-      statusCode: 200,
-      responseId: uuid(),
-      payload: data,
-    }
-    this.server.emit('taskStateUpdate', response);
   }
 }

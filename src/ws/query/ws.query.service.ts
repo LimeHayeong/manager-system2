@@ -1,15 +1,15 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
-import { ManagerService } from 'src/manager-sys/manager/manager.service';
-import { TaskStatesNoLogsDTO } from 'src/manager-sys/manager/dto/task-states.dto';
-import { NewTaskLogRequestDTO, TaskLogRequestDTO } from './dto/task-log-request.dto';
+import { NewTaskLogRequestDTO, TaskLogRequestDTO } from '../dto/task-log-request.dto';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from 'src/manager-sys/manager/dto/task-state.dto';
 
+import { Injectable } from '@nestjs/common';
+import { ManagerService } from 'src/manager-sys/manager/manager.service';
+import { TaskStatesNoLogsDTO } from 'src/manager-sys/manager/dto/task-states.dto';
+
 @Injectable()
-export class WsService {
+export class WsQueryService {
     constructor(
-        @Inject(forwardRef(() => ManagerService))
         private readonly managerService: ManagerService
-    ) {}
+    ){}
 
     public async getInitialStates(): Promise<TaskStatesNoLogsDTO> {
         return await this.managerService.wsGetCurrentStates();

@@ -1,12 +1,11 @@
-import { Module, forwardRef } from '@nestjs/common';
-
 import { LoggerModule } from '../logger/logger.module';
 import { ManagerController } from './manager.controller';
 import { ManagerService } from './manager.service';
-import { WsModule } from 'src/ws/ws.module';
+import { Module } from '@nestjs/common';
+import { WsReceiveModule } from 'src/ws/receive/ws.receive.module';
 
 @Module({
-  imports: [forwardRef(() => WsModule), LoggerModule],
+  imports: [LoggerModule, WsReceiveModule],
   providers: [ManagerService],
   controllers: [ManagerController],
   exports: [ManagerService]

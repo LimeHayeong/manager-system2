@@ -1,11 +1,11 @@
-import { BadRequestException, HttpException, Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common';
-import { WsGateway } from 'src/ws/ws.gateway';
-import { Task } from '../types/task';
-import { LoggerService } from '../logger/logger.service';
-import { v4 as uuid } from 'uuid'
-import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
-import { Helper } from '../util/helper';
+
+import { LoggerService } from '../logger/logger.service';
+import { Task } from '../types/task';
+import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
+import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
+import { v4 as uuid } from 'uuid'
 
 const newTasks: Task.TaskStatewithLogs[] = [
     {
@@ -106,8 +106,7 @@ export class ManagerService {
     private maxRecentLogs;
 
     constructor(
-        @Inject(forwardRef(() => WsGateway))
-        private readonly wsGateway: WsGateway,
+        private readonly wsGateway: WsReceiveGateway,
         private readonly logger: LoggerService
     ) {
         this.initialization();
