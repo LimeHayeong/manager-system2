@@ -14,7 +14,6 @@ import { WsQueryModule } from './ws/query/ws.query.module';
     /* Global Modules */
     ManagerModule,
     WsQueryModule,
-    LoggerModule,
     ScheduleModule.forRoot(),
     /* System Modules */
     /* Domain Modules */
