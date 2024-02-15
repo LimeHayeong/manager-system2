@@ -21,7 +21,7 @@ export class ServiceDService extends BaseService {
     @Helper.AutoManage
     private async processRT() {
         // 10,000개의 항목을 생성 (예시)
-        const chains = Array.from({ length: 10000 }, (_, i) => `Chain_${i + 1}`);
+        const chains = Array.from({ length: 1000 }, (_, i) => `Chain_${i + 1}`);
 
         // 단일 Promise.all은 부하가 심함.
         for (const chainChunk of _.chunk(chains, 50)) {
@@ -47,9 +47,9 @@ export class ServiceDService extends BaseService {
     private async doSomethingD(chainInfo: any) {
         try {
             await delay(0.01, 0.015)
-            this.log(`[${chainInfo.chainName}] okay`);
+            await this.log(`[${chainInfo.chainName}] okay`);
         } catch (e) {
-            this.error(e);
+            await this.error(e);
         }
     }
 
@@ -59,7 +59,7 @@ export class ServiceDService extends BaseService {
             if (randomNumber < 1 / 100) {
                 // 1% 확률로 warn 발생
                 await delay(0.02, 0.025)
-                this.warn(`[${chain}] is not available`);
+                await this.warn(`[${chain}] is not available`);
                 return { chainName: chain, price: null };
             } else if(1 / 100 <= randomNumber && randomNumber <= 3 / 200) {
                 // 0.5% 확률로 에러 발생
@@ -69,7 +69,7 @@ export class ServiceDService extends BaseService {
                 return { chainName: chain, price: Math.floor(Math.random() * 100) + 1 };
             }
         } catch (e) {
-            this.error(e);
+            await this.error(e);
         }
     }
 }

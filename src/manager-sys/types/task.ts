@@ -33,6 +33,21 @@ export namespace Task {
       data: IContext | null;
       timestamp: number; // toISOString
     }
+
+    // Task 통계를 위한 Log
+    export interface StatisticLog extends ITaskIdentity{
+      executionTime: number;
+      data: taskStatistic;
+      timestamp: number;
+    }
+
+    // Task 통계 데이터 정보
+    export interface taskStatistic {
+      logCount?: number;
+      infoCount?: number;
+      warnCount?: number;
+      errorCount?: number;
+    }
   
     export class ErrorObject {
       name: string;

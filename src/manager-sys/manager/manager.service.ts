@@ -2,9 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
 
 import { LoggerService } from '../logger/logger.service';
+import { ManagerStatistic } from './manager.statistic';
 import { Task } from '../types/task';
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
 import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
+import { delay } from '../util/delay';
 import { v4 as uuid } from 'uuid'
 
 const newTasks: Task.TaskStatewithLogs[] = [
@@ -107,7 +109,8 @@ export class ManagerService {
 
     constructor(
         private readonly wsGateway: WsReceiveGateway,
-        private readonly logger: LoggerService
+        private readonly logger: LoggerService,
+        private readonly statistic: ManagerStatistic
     ) {
         this.initialization();
     }
@@ -235,8 +238,11 @@ export class ManagerService {
     
         currentTask.updatedAt = dateNow;
     
+        await delay(0.01, 0.02);
+        
         const newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
+        // TODO: WARN-ERROR등 일 때 statisics 추가 해야함.
         if (logLevel === Task.LogLevel.INFO) {
             // Info면 console에 출력 안 함.
             this.logTransferNoConsole(newLog);

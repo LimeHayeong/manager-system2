@@ -4,21 +4,22 @@ import { ClsService } from "nestjs-cls";
 import { ManagerService } from "../manager/manager.service";
 import { NotFoundException } from "@nestjs/common";
 import { Task } from "./task";
+import { delay } from "../util/delay";
 
 export abstract class BaseService {
     protected abstract cls: ClsService;
     protected abstract managerService: ManagerService;
   
-    protected log(data: string) {
+    protected async log(data: string) {
         const result: Task.IContext = {
             message: '',
         }
         result.message = data;
       const context = this.cls.get('context');
-      this.managerService.logTask(context, result, Task.LogLevel.INFO);
+      await this.managerService.logTask(context, result, Task.LogLevel.INFO);
     }
 
-    protected warn(data: string) {
+    protected async warn(data: string) {
         const result: Task.IContext = {
             message: ''
         };
@@ -29,13 +30,13 @@ export abstract class BaseService {
             result.message = data;
         }
 
-        this.managerService.logTask(context, result, Task.LogLevel.WARN);
+        await this.managerService.logTask(context, result, Task.LogLevel.WARN);
     }
 
-    protected error(data: string | Error,
+    protected async error(data: string | Error,
         options?: {
             errorStack?: number
-    }): void {
+    }) {
         const result: Task.IContext = {
             message: '',
             stack: []
@@ -55,7 +56,7 @@ export abstract class BaseService {
             result.stack = this.trimErrorStack(data, effectiveOptions.errorStack);
         }   
 
-        this.managerService.logTask(context, result, Task.LogLevel.ERROR);
+        await this.managerService.logTask(context, result, Task.LogLevel.ERROR);
     }
 
     // HTTP context

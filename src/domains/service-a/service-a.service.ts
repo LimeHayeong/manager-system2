@@ -38,7 +38,7 @@ export class ServiceAService extends BaseService{
                         try {
                             await this.doSomethingA(chainInfo);
                         } catch (e) {
-                            this.error(e);
+                            await this.error(e);
                         }
                     }
 
@@ -48,16 +48,16 @@ export class ServiceAService extends BaseService{
             promiseInfo.push(...chunkInfos);
         }
 
-        this.log('all finished');
+        await this.log('all finished');
     }
 
     // 무언가를 하는 dummy function, 약 1,2초 걸림.
     private async doSomethingA(chainInfo: any) {
         try {
             await delay(1,2);
-            this.log(`[${chainInfo.chainName}] okay`);
+            await this.log(`[${chainInfo.chainName}] okay`);
         } catch (e) {
-            this.error(e);
+            await this.error(e);
         }
     }
 
@@ -66,7 +66,7 @@ export class ServiceAService extends BaseService{
         await delay(1,2);
         if (Math.random() < 1 / 10) {
             // 동작에 심각한 영향을 주진 않지만, 누락된 정보가 있으면 warn.
-            this.warn(`[${chain}] is not available`);
+            await this.warn(`[${chain}] is not available`);
             return { chainName: chain, price: null };
         } else {
             return { chainName: chain, price: Math.floor(Math.random() * 100) + 1 };

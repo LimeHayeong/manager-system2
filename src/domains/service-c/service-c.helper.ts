@@ -23,11 +23,11 @@ export class ServiceCHelper extends BaseService {
 
     private async helpSomething() {
         await delay(10,20);
-        this.log('25% done')
+        await this.log('25% done')
         await delay(10,20);
-        this.log('50% done')
+        await this.log('50% done')
         await delay(10,20);
-        this.log('75% done')
+        await this.log('75% done')
         await delay(10,20);
     }
 }
