@@ -42,3 +42,4 @@ lerna-debug.log*
 log.json
 log2.json
 log3.json
+log-statistic.json

@@ -119,9 +119,8 @@ export class ManagerService {
         // TODO: snapshot 만들어서 과거 state 복원 로직 추가
 
         this.maxRecentLogs = maxLogsNumber;
-        newTasks.forEach(newTask => this.taskStates.push(newTask));
-        newWorks.forEach(newWork => this.workStates.push(newWork));
-
+        this.taskStates = newTasks;
+        this.workStates = newWorks;
         console.log('[System] ManagerService initialized');
     }
 
@@ -221,6 +220,7 @@ export class ManagerService {
         // 로그 추가 및 전송
         const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
+        await this.statistic.startTask(taskId);
         this.logTransfer(newLog);
         
         // wsGateway 데이터 전송
@@ -238,11 +238,13 @@ export class ManagerService {
     
         currentTask.updatedAt = dateNow;
     
+        // for test
         await delay(0.01, 0.02);
         
         const newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
-        // TODO: WARN-ERROR등 일 때 statisics 추가 해야함.
+        await this.statistic.taskLogCountIncrease(taskId, logLevel)
+        
         if (logLevel === Task.LogLevel.INFO) {
             // Info면 console에 출력 안 함.
             this.logTransferNoConsole(newLog);
@@ -269,6 +271,7 @@ export class ManagerService {
 
         const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
+        await this.statistic.endTask(taskId, currentTask.startAt, currentTask.endAt);
         this.logTransfer(newLog);
 
         // wsGateway 데이터 전송
@@ -290,11 +293,10 @@ export class ManagerService {
     // initial 당시 (domain, task, taskType) 쌍으로 task 찾아주는 helper function
     // return: index
     private findTask(taskId: Task.ITaskIdentity): number {
-        const idx = this.taskStates.findIndex(taskState =>
+        return this.taskStates.findIndex(taskState =>
             taskState.domain === taskId.domain
             && taskState.task === taskId.task
             && taskState.taskType === taskId.taskType)
-        return idx;
     }
 
     // TODO: data- any 수정
