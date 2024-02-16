@@ -117,8 +117,6 @@ export class ManagerService {
     private initialization() {
         // TODO: snapshot 만들어서 과거 state 복원 로직 추가
 
-        this.maxRecentLogs = maxLogsNumber;
-        this.taskStates = newTasks;
         newTasks.forEach(newTask => this.taskStates.push(newTask));
         newWorks.forEach(newWork => this.workStates.push(newWork));
 

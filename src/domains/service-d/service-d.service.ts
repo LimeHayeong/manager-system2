@@ -21,7 +21,7 @@ export class ServiceDService extends BaseService {
     @Helper.AutoManage
     private async processRT() {
         // 10,000개의 항목을 생성 (예시)
-        const chains = Array.from({ length: 1000 }, (_, i) => `Chain_${i + 1}`);
+        const chains = Array.from({ length: 30000 }, (_, i) => `Chain_${i + 1}`);
 
         // 단일 Promise.all은 부하가 심함.
         for (const chainChunk of _.chunk(chains, 50)) {

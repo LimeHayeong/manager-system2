@@ -7,7 +7,7 @@ import { v4 as uuid } from 'uuid';
 import { WebSocketError, WebSocketResponse } from 'src/manager-sys/types/ws.response';
 import { NewTaskLogRequestDTO, TaskLogRequestDTO } from '../dto/task-log-request.dto';
 
-@WebSocketGateway(3033, { namespace: 'ws', cors: { origin: '*' }})
+@WebSocketGateway(3031, { namespace: 'ws', cors: { origin: '*' }})
 @UseInterceptors(CustomInterceptor)
 export class WsQueryGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()

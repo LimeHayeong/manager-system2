@@ -113,7 +113,8 @@ export class ManagerStatistic {
             currentTaskStatistic.executionTime = endAt - startAt;
             currentTaskStatistic.data.logCount++;
             currentTaskStatistic.data.infoCount++;
-            await this.logger.pushStatisticLog(currentTaskStatistic)
+            this.logger.pushStatisticLog({
+                ...currentTaskStatistic})
         }
     }
 

@@ -7,14 +7,17 @@ import { UseInterceptors } from '@nestjs/common';
 import { WebSocketResponse } from 'src/manager-sys/types/ws.response';
 import { v4 as uuid } from 'uuid'
 
-@WebSocketGateway(3033, { namespace: 'ws', cors: { origin: '*' }})
+@WebSocketGateway(3031, { namespace: 'ws', cors: { origin: '*' }})
 @UseInterceptors(CustomInterceptor)
 export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()
   private server: Server;
+  private gatewaySettled: boolean;
 
   constructor(
-  ) {}
+  ) {
+    this.gatewaySettled = false;
+  }
 
   async handleConnection(client: Socket, ...args: any[]) {
     console.log(`[System] Client connected: ${client.id}`);
@@ -45,6 +48,11 @@ export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   public async emitTaskStateUpdate(data: TaskStatesNoLogsDTO) {
+    // settled 될 때까지 대기.
+    while (!this.gatewaySettled) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
     const response: WebSocketResponse = {
       success: true,
       statusCode: 200,
