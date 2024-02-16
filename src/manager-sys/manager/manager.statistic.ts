@@ -2,20 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
 
-const newStatisticData: Task.taskStatistic = {
-    logCount: 0,
-    infoCount: 0,
-    warnCount: 0,
-    errorCount: 0,
-}
-
 const newTaskStatistic: Task.StatisticLog[] = [
     {
         domain: 'ServiceA',
         task: 'processRT',
         taskType: Task.TaskType.TRIGGER,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -23,7 +16,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processRT',
         taskType: Task.TaskType.CRON,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -31,7 +24,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processRT',
         taskType: Task.TaskType.TRIGGER,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -39,7 +32,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processRT',
         taskType: Task.TaskType.CRON,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -47,7 +40,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processRT',
         taskType: Task.TaskType.TRIGGER,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -55,7 +48,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processHelper',
         taskType: Task.TaskType.TRIGGER,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
     {
@@ -63,7 +56,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
         task: 'processRT',
         taskType: Task.TaskType.TRIGGER,
         executionTime: null,
-        data: newStatisticData,
+        data: null,
         timestamp: null,
     },
 ]
@@ -81,7 +74,7 @@ export class ManagerStatistic {
     }
 
     private initialization() {
-        this.taskStatistic = newTaskStatistic;
+        newTaskStatistic.forEach(newTaskStatistic => this.taskStatistic.push(newTaskStatistic));
     }
 
     public async startTask(taskId: Task.ITaskIdentity){
@@ -89,9 +82,11 @@ export class ManagerStatistic {
         if(taskIdx !== -1){
             // 시작할 때 데이터 초기화.
             const currentTaskStatistic = this.taskStatistic[taskIdx]
-            currentTaskStatistic.data = newStatisticData;
+            currentTaskStatistic.data = this.createNewStatisticData();
             currentTaskStatistic.timestamp = null;
             currentTaskStatistic.executionTime = null;
+            currentTaskStatistic.data.logCount++;
+            currentTaskStatistic.data.infoCount++;
         }
     }
 
@@ -116,11 +111,23 @@ export class ManagerStatistic {
             const currentTaskStatistic = this.taskStatistic[taskIdx]
             currentTaskStatistic.timestamp = Date.now();
             currentTaskStatistic.executionTime = endAt - startAt;
-            this.logger.pushStatisticLog(currentTaskStatistic)
+            currentTaskStatistic.data.logCount++;
+            currentTaskStatistic.data.infoCount++;
+            await this.logger.pushStatisticLog(currentTaskStatistic)
         }
     }
 
     private findTask(taskId: Task.ITaskIdentity): number{
-        return this.taskStatistic.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
+        const idx = this.taskStatistic.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
+        return idx;
+    }
+
+    private createNewStatisticData(): Task.taskStatistic {
+        return {
+            logCount: 0,
+            infoCount: 0,
+            warnCount: 0,
+            errorCount: 0,
+        };
     }
 }

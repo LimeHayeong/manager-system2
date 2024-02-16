@@ -18,8 +18,8 @@ Content-Type: application/json; charset=UTF-8
 {
     "domain": "ServiceA",
     "task": "processRT",
-    "taskType": "CRON",
-    "active": false
+    "taskType": "TRIGGER",
+    "active": true
 }
 
 ### Service B Trigger.

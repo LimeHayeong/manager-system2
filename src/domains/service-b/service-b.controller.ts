@@ -1,13 +1,15 @@
-import { Body, Controller, Post, Req, Res, UseFilters } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseFilters, UseInterceptors } from '@nestjs/common';
 
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 import { ServiceBService } from './service-b.service';
 import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from 'src/manager-sys/types/api.response';
 import { Request, Response } from 'express';
+import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('serviceB')
+@UseInterceptors(CustomInterceptor)
 export class ServiceBController {
     constructor(
         private readonly service: ServiceBService

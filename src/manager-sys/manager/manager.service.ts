@@ -6,7 +6,6 @@ import { ManagerStatistic } from './manager.statistic';
 import { Task } from '../types/task';
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
 import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
-import { delay } from '../util/delay';
 import { v4 as uuid } from 'uuid'
 
 const newTasks: Task.TaskStatewithLogs[] = [
@@ -16,7 +15,7 @@ const newTasks: Task.TaskStatewithLogs[] = [
         taskType: Task.TaskType.TRIGGER,
         status: Task.TaskStatus.TERMINATED,
         contextId: null,
-        isAvailable: true,
+        isAvailable: false,
         updatedAt: null,
         startAt: null,
         endAt: null,
@@ -120,7 +119,9 @@ export class ManagerService {
 
         this.maxRecentLogs = maxLogsNumber;
         this.taskStates = newTasks;
-        this.workStates = newWorks;
+        newTasks.forEach(newTask => this.taskStates.push(newTask));
+        newWorks.forEach(newWork => this.workStates.push(newWork));
+
         console.log('[System] ManagerService initialized');
     }
 
@@ -237,9 +238,6 @@ export class ManagerService {
         const dateNow = Date.now();
     
         currentTask.updatedAt = dateNow;
-    
-        // for test
-        await delay(0.01, 0.02);
         
         const newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);

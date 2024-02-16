@@ -7,8 +7,8 @@ import { Task } from '../types/task';
 const fileInterval = 5000;
 const consoleInterval = 1000;
 // 실제로는 5분 정도로 해도 괜찮다. 1000 * 60 * 5
-const statisticInterval = 1000 * 30;
-const tempfilename = 'log3.json'
+const statisticInterval = 1000 * 1;
+const tempfilename = 'log4.json'
 const tempstatisticfilename = 'log-statistic.json'
 
 // TODO: Error handling
@@ -76,7 +76,6 @@ export class LoggerService {
 
     public async pushStatisticLog(log: Task.StatisticLog) {
         try {
-            console.log('[System] pushing statistic log: ' + JSON.stringify(log));
             this.statisticBuffer.push(log);
         } catch (e) {
 

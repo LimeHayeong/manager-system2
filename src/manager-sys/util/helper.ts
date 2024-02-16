@@ -1,3 +1,5 @@
+import { delay } from "./delay";
+
 export namespace Helper {
     export function clsBuilder(domain: string, task: string) {
         return {
@@ -26,7 +28,7 @@ export namespace Helper {
                     task: this.cls.get('context').task,
                     taskType: context
                 };
-                this.cls.set('context', taskIdentity);
+                this.cls.set('context', taskIdentity)
 
                 // managerService.build 호출
                 if(await this.managerService.buildTask(this.cls.get('context'))){
