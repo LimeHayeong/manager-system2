@@ -15,7 +15,7 @@ const newTasks: Task.TaskStatewithLogs[] = [
         taskType: Task.TaskType.TRIGGER,
         status: Task.TaskStatus.TERMINATED,
         contextId: null,
-        isAvailable: false,
+        isAvailable: true,
         updatedAt: null,
         startAt: null,
         endAt: null,
@@ -178,19 +178,19 @@ export class ManagerService {
         if(currentTask == null) { 
             // task가 없으면, false 반환
             // Q. 맞을까? 이러면 미리 다 선언하긴 해야함.
-            console.log(`[System] task not found - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
+            // console.log(`[System] task not found - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
         }
 
         if(currentTask.isAvailable === false){
             // task가 실행 불가능하면, false 반환.
-            console.log(`[System] task is not available - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
+            // console.log(`[System] task is not available - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
         }
 
         // task가 실행 중이면, false 반환.
         if(currentTask.status === Task.TaskStatus.PROGRESS){
-            console.log(`[System] task is already in progress - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
+            // console.log(`[System] task is already in progress - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
         }
 
@@ -356,7 +356,6 @@ export class ManagerService {
     // TODO: error 조금 더 세련되게
     public async wsGetNewTaskLogs(domain: string, task: string, taskType: Task.TaskType, startLogSeq: number): Promise<TaskStateWithNewLogsDTO> {
         let eventData;
-        // console.log(domain, task, taskType, startLogSeq)
         const taskIdx = this.findTask({ domain, task, taskType });
         if(taskIdx === -1){
             // 찾는 task가 없으면,

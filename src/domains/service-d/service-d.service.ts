@@ -47,7 +47,7 @@ export class ServiceDService extends BaseService {
     private async doSomethingD(chainInfo: any) {
         try {
             await delay(0.01, 0.015)
-            await this.log(`[${chainInfo.chainName}] okay`);
+            await this.log(`okay`, chainInfo.chainName);
         } catch (e) {
             await this.error(e);
         }
@@ -59,17 +59,17 @@ export class ServiceDService extends BaseService {
             if (randomNumber < 1 / 100) {
                 // 1% 확률로 warn 발생
                 await delay(0.02, 0.025)
-                await this.warn(`[${chain}] is not available`);
+                await this.warn(`not available`, chain);
                 return { chainName: chain, price: null };
             } else if(1 / 100 <= randomNumber && randomNumber <= 3 / 200) {
                 // 0.5% 확률로 에러 발생
                 await delay(0.05, 0.07)
-                throw new Error(`[${chain}] error occured`);
+                throw new Error(`error occured`);
             }{
                 return { chainName: chain, price: Math.floor(Math.random() * 100) + 1 };
             }
         } catch (e) {
-            await this.error(e);
+            await this.error(e, chain);
         }
     }
 }

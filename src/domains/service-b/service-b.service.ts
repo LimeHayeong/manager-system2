@@ -60,7 +60,7 @@ export class ServiceBService extends BaseService {
     private async doSomethingB(chain: string) {
         await delay(0.03, 0.05);
         if (Math.random() < 1 / 20) {
-            await this.warn(`[MARKET] ${chain} is not available`)
+            await this.warn(`[MARKET] not available`, chain)
             return { chainName: chain, price: null };
         } else {
             return { chainName: chain, price: Math.floor(Math.random() * 100) + 1 };

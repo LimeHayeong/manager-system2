@@ -4,22 +4,30 @@ import { ClsService } from "nestjs-cls";
 import { ManagerService } from "../manager/manager.service";
 import { NotFoundException } from "@nestjs/common";
 import { Task } from "./task";
-import { delay } from "../util/delay";
 
 export abstract class BaseService {
     protected abstract cls: ClsService;
     protected abstract managerService: ManagerService;
   
-    protected async log(data: string) {
+    protected async log(data: string, chain?: string) {
         const result: Task.IContext = {
             message: '',
         }
-        result.message = data;
-      const context = this.cls.get('context');
+        
+        const context = this.cls.get('context');
+
+        if(typeof data === 'string') {
+            result.message = data;
+        }
+        if(chain){
+            result.chain = chain;
+        }
+
+     
       await this.managerService.logTask(context, result, Task.LogLevel.INFO);
     }
 
-    protected async warn(data: string) {
+    protected async warn(data: string, chain?: string) {
         const result: Task.IContext = {
             message: ''
         };
@@ -29,11 +37,15 @@ export abstract class BaseService {
         if(typeof data === 'string') {
             result.message = data;
         }
+        if(chain){
+            result.chain = chain;
+        }
 
         await this.managerService.logTask(context, result, Task.LogLevel.WARN);
     }
 
     protected async error(data: string | Error,
+        chain?: string,
         options?: {
             errorStack?: number
     }) {
@@ -42,7 +54,9 @@ export abstract class BaseService {
             stack: []
         };
 
-        const defaultOptions = { errorStack: 2 };
+        
+
+        const defaultOptions = { errorStack: 4 };
         const effectiveOptions = { ...defaultOptions, ...options };
         if(effectiveOptions.errorStack < 0) effectiveOptions.errorStack = 0;
         if(effectiveOptions.errorStack > 7) effectiveOptions.errorStack = 7;
@@ -55,6 +69,9 @@ export abstract class BaseService {
             result.message = data.message;
             result.stack = this.trimErrorStack(data, effectiveOptions.errorStack);
         }   
+        if(chain){
+            result.chain = chain;
+        }
 
         await this.managerService.logTask(context, result, Task.LogLevel.ERROR);
     }

@@ -55,7 +55,7 @@ export class ServiceAService extends BaseService{
     private async doSomethingA(chainInfo: any) {
         try {
             await delay(1,2);
-            await this.log(`[${chainInfo.chainName}] okay`);
+            await this.log(`okay`, chainInfo.chainName);
         } catch (e) {
             await this.error(e);
         }
@@ -66,7 +66,7 @@ export class ServiceAService extends BaseService{
         await delay(1,2);
         if (Math.random() < 1 / 10) {
             // 동작에 심각한 영향을 주진 않지만, 누락된 정보가 있으면 warn.
-            await this.warn(`[${chain}] is not available`);
+            await this.warn(`not available`, chain);
             return { chainName: chain, price: null };
         } else {
             return { chainName: chain, price: Math.floor(Math.random() * 100) + 1 };
