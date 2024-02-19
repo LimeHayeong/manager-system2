@@ -19,7 +19,7 @@ export class ServiceDService extends BaseService {
 
     @UseCls(Helper.clsBuilder('ServiceD', 'processRT'))
     @Helper.AutoManage
-    private async processRT() {
+    public async processRT(context?: string) {
         // 10,000개의 항목을 생성 (예시)
         const chains = Array.from({ length: 30000 }, (_, i) => `Chain_${i + 1}`);
 

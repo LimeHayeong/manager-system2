@@ -1,6 +1,15 @@
 import { delay } from "./delay";
+import { v4 as uuid } from 'uuid';
 
 export namespace Helper {
+    export function clsBuilderWork() {
+        return {
+            setup: (cls) => {
+                cls.set('workId', uuid())
+            }
+        }
+    }
+
     export function clsBuilder(domain: string, task: string) {
         return {
             setup: (cls) => {
@@ -34,15 +43,25 @@ export namespace Helper {
                 if(await this.managerService.buildTask(this.cls.get('context'))){
                     // build가 성공적으로 시행되면,
                     // managerService.start 호출
-                    await this.managerService.startTask(this.cls.get('context'));
 
+                    // workId가 있다면 workContext임.
+                    if(this.cls.get('workId')){
+                        await this.managerService.startTask(this.cls.get('context'), this.cls.get('workId'));
+                    }else{
+                        await this.managerService.startTask(this.cls.get('context'));
+                    }
+                    
                     try {
                         // 원래 메서드 실행
                         const result = await originalMethod.apply(this, args);
                         return result;
                     } finally {
                         // managerService.end 호출
-                        await this.managerService.endTask(this.cls.get('context'));
+                        if(this.cls.get('workId')){
+                            await this.managerService.endTask(this.cls.get('context'), this.cls.get('workId'));
+                        } else {
+                            await this.managerService.endTask(this.cls.get('context'));
+                        }
                     }
                 }
             } catch (e) {

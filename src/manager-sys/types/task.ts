@@ -27,11 +27,16 @@ export namespace Task {
       domain: string;
       task: string;
       taskType?: TaskType;
-      contextId: { [key: string]: string };
+      contextId: LogContextId;
       level: LogLevel;
       logTiming: LogTiming;
       data: IContext | null;
       timestamp: number; // toISOString
+    }
+
+    export interface LogContextId {
+      task?: string;
+      work?: string
     }
 
     // Task 통계를 위한 Log
@@ -55,10 +60,7 @@ export namespace Task {
       stack: string;
     }
   
-    export interface WorkState {
-      // 구별자
-      work: string;
-      workType: TaskType;
+    export interface WorkState extends IWorkIdentity{
       contextId: string;
       status: TaskStatus;
       updatedAt: number;
@@ -89,6 +91,11 @@ export namespace Task {
       domain: string;
       task: string;
       taskType: TaskType;
+    }
+
+    export interface IWorkIdentity {
+      work: string;
+      workType: TaskType;
     }
   
     // Task 실행 context

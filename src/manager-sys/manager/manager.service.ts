@@ -78,7 +78,7 @@ export class ManagerService {
     public isValidTask(taskId: Task.ITaskIdentity) {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
-            throw new NotFoundException(`${taskId.domain}:${taskId.task}를 찾을 수 없습니다.`);
+            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}를 찾을 수 없습니다.`);
         }
     }
 
@@ -110,7 +110,7 @@ export class ManagerService {
     }
 
     // Task 시작
-    public async startTask(taskId: Task.ITaskIdentity) {
+    public async startTask(taskId: Task.ITaskIdentity, workId?: string) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
 
@@ -131,7 +131,13 @@ export class ManagerService {
         }
 
         // 로그 추가 및 전송
-        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        let newLog;
+        if(workId){
+            // work context면,
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }else{
+            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.startTask(taskId);
         this.logTransfer(newLog);
@@ -145,13 +151,19 @@ export class ManagerService {
 
     // Task 진행 중 로그 추가
     // TODO: data- message수정
-    public async logTask(taskId: Task.ITaskIdentity, data: any, logLevel: Task.LogLevel) {
+    public async logTask(taskId: Task.ITaskIdentity, data: any, logLevel: Task.LogLevel, workId?: string) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
     
         currentTask.updatedAt = dateNow;
         
-        const newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
+        let newLog;
+        if(workId){
+            // work context면,
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }else{
+            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.taskLogCountIncrease(taskId, logLevel)
         
@@ -164,7 +176,7 @@ export class ManagerService {
     }
 
     // Task 종료, taskIdentity로 taskIdx 찾아서 상태 update.
-    public async endTask(taskId: Task.ITaskIdentity) {
+    public async endTask(taskId: Task.ITaskIdentity, workId?: string) {
         const taskIdx = this.findTask(taskId);
         const currentTask = this.taskStates[taskIdx];
         const dateNow = Date.now();
@@ -179,7 +191,13 @@ export class ManagerService {
         currentTask.updatedAt = dateNow
         currentTask.endAt = dateNow
 
-        const newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+        let newLog;
+        if(workId){
+            // work context면,
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }else{
+            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.endTask(taskId, currentTask.startAt, currentTask.endAt);
         this.logTransfer(newLog);
@@ -190,6 +208,59 @@ export class ManagerService {
         }
         this.wsGateway.emitTaskStateUpdate(eventData);
     };
+
+    public async buildWork(workId: Task.IWorkIdentity): Promise<boolean> {
+        const currentWork = this.workStates[this.findWork(workId)];
+        if(currentWork == null) { 
+            // work가 없으면, false 반환
+            console.log('no work');
+            return false;
+        }
+
+        if(currentWork.status === Task.TaskStatus.PROGRESS){
+            // work가 실행 중이면, false 반환.
+            console.log('work is already in progress');
+            return false;
+        }
+
+        return true
+    }
+
+    public async startWork(workId: Task.IWorkIdentity, contextId: string): Promise<string> {
+        const workIdx = this.findWork(workId);
+        const currentWork = this.workStates[workIdx];
+        const dateNow = Date.now();
+
+        currentWork.status = Task.TaskStatus.PROGRESS;
+        currentWork.contextId = contextId;
+        currentWork.startAt = dateNow;
+        currentWork.updatedAt = dateNow;
+        currentWork.endAt = null;
+
+        // 로그 전송
+        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        // TODO: statistic 추가.
+        this.logTransfer(newLog);
+        // wsGateway 전송
+
+        return currentWork.contextId;
+    }
+
+    public async endWork(workId: Task.IWorkIdentity) {
+        const workIdx = this.findWork(workId);
+        const currentWork = this.workStates[workIdx];
+        const dateNow = Date.now();
+
+        currentWork.status = Task.TaskStatus.TERMINATED;
+        currentWork.updatedAt = dateNow;
+        currentWork.endAt = dateNow;
+
+        // 로그 전송
+        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+        // TODO: statistic 추가.
+        this.logTransfer(newLog);
+        // wsGateway 전송
+    }
 
     private getTaskState(taskId: Task.ITaskIdentity): Task.TaskStatewithLogs {
         const taskIdx = this.findTask(taskId);
@@ -209,18 +280,36 @@ export class ManagerService {
             && taskState.taskType === taskId.taskType)
     }
 
+    // initial 당시 (work, workType) 쌍으로 work 찾아주는 helper function
+    // return: index
+    private findWork(WorkId: Task.IWorkIdentity): number {
+        return this.workStates.findIndex(workState =>
+            workState.work === WorkId.work
+            && workState.workType === WorkId.workType)
+    }
+
     // TODO: data- any 수정
-    private logFormat(taskId: Task.ITaskIdentity, contextId: string, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
-        return {
+    private logFormat(taskId: Task.ITaskIdentity, contextId: string | object, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
+        const log = {
             domain: taskId.domain,
             task: taskId.task,
             taskType: taskId.taskType,
-            contextId: { task: contextId },
+            contextId: null,
             level: level,
             logTiming: timing,
             data: data,
             timestamp: timestamp
         }
+        if(typeof contextId === 'string'){
+            if(taskId.domain === 'work'){
+                log.contextId = { work: contextId }
+            }else{
+                log.contextId = { task: contextId }
+            }
+        } else {
+            log.contextId = contextId
+        }
+        return log
     }
 
     private async logTransfer(log: Task.Log) {

@@ -16,10 +16,22 @@ export const newTasks: Task.TaskStatewithLogs[] = [
     {
         domain: 'ServiceA',
         task: 'processRT',
+        taskType: Task.TaskType.WORK,
+        status: Task.TaskStatus.TERMINATED,
+        contextId: null,
+        isAvailable: true,
+        updatedAt: null,
+        startAt: null,
+        endAt: null,
+        recentLogs: [[]],
+    },
+    {
+        domain: 'ServiceA',
+        task: 'processRT',
         taskType: Task.TaskType.CRON,
         status: Task.TaskStatus.WAITING,
         contextId: null,
-        isAvailable: true,
+        isAvailable: false,
         updatedAt: null,
         startAt: null,
         endAt: null,
@@ -29,6 +41,18 @@ export const newTasks: Task.TaskStatewithLogs[] = [
         domain: 'ServiceB',
         task: 'processRT',
         taskType: Task.TaskType.TRIGGER,
+        status: Task.TaskStatus.TERMINATED,
+        contextId: null,
+        isAvailable: true,
+        updatedAt: null,
+        startAt: null,
+        endAt: null,
+        recentLogs: [[]],
+    },
+    {
+        domain: 'ServiceB',
+        task: 'processRT',
+        taskType: Task.TaskType.WORK,
         status: Task.TaskStatus.TERMINATED,
         contextId: null,
         isAvailable: true,
@@ -85,9 +109,48 @@ export const newTasks: Task.TaskStatewithLogs[] = [
         endAt: null,
         recentLogs: [[]],
     },
+    {
+        domain: 'ServiceD',
+        task: 'processRT',
+        taskType: Task.TaskType.WORK,
+        status: Task.TaskStatus.TERMINATED,
+        contextId: null,
+        isAvailable: true,
+        updatedAt: null,
+        startAt: null,
+        endAt: null,
+        recentLogs: [[]],
+    },
 ];
 
-export const newWorks: Task.WorkState[] = []
+export const newWorks: Task.WorkState[] = [
+    {
+        work: 'sampleWork',
+        workType: Task.TaskType.TRIGGER,
+        status: Task.TaskStatus.TERMINATED,
+        contextId: null,
+        updatedAt: null,
+        startAt: null,
+        endAt: null,
+        taskList: [
+            {
+                domain: 'ServiceA',
+                task: 'processRT',
+                taskType: Task.TaskType.WORK,
+            },
+            {
+                domain: 'ServiceB',
+                task: 'processRT',
+                taskType: Task.TaskType.WORK,
+            },
+            {
+                domain: 'ServiceD',
+                task: 'processRT',
+                taskType: Task.TaskType.WORK,
+            }
+        ],
+    }
+]
 
 export const newTaskStatistic: Task.StatisticLog[] = [
     {

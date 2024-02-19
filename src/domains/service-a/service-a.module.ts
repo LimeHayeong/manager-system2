@@ -7,6 +7,7 @@ import { ServiceAService } from './service-a.service';
 @Module({
   imports: [ClsModule, ManagerModule],
   providers: [ServiceAService],
-  controllers: [ServiceAController]
+  controllers: [ServiceAController],
+  exports: [ServiceAService]
 })
 export class ServiceAModule {}

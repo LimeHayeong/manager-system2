@@ -7,7 +7,7 @@ import { UseInterceptors } from '@nestjs/common';
 import { WebSocketResponse } from 'src/manager-sys/types/ws.response';
 import { v4 as uuid } from 'uuid'
 
-@WebSocketGateway(3031, { namespace: 'ws', cors: { origin: '*' }})
+@WebSocketGateway(3037, { namespace: 'ws', cors: { origin: '*' }})
 @UseInterceptors(CustomInterceptor)
 export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer()

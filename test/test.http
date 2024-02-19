@@ -8,7 +8,8 @@ Content-Type: application/json; charset=UTF-8
 
 {
     "domain": "ServiceA",
-    "task": "processRT"
+    "task": "processRT",
+    "taskType": "TRIGGER"
 }
 
 ### Service A Activator.
@@ -28,7 +29,8 @@ Content-Type: application/json; charset=UTF-8
 
 {
     "domain": "ServiceB",
-    "task": "processRT"
+    "task": "processRT",
+    "taskType": "TRIGGER"
 }
 
 ### Service B Activator.
@@ -48,7 +50,8 @@ Content-Type: application/json; charset=UTF-8
 
 {
     "domain": "ServiceC",
-    "task": "processRT"
+    "task": "processRT",
+    "taskType": "TRIGGER"
 }
 
 ### Service C Activator.
@@ -68,7 +71,8 @@ Content-Type: application/json; charset=UTF-8
 
 {
     "domain": "ServiceC",
-    "task": "processHelper"
+    "task": "processHelper",
+    "taskType": "TRIGGER"
 }
 
 ### Service C Activator.
@@ -88,7 +92,8 @@ Content-Type: application/json; charset=UTF-8
 
 {
     "domain": "ServiceD",
-    "task": "processRT"
+    "task": "processRT",
+    "taskType": "TRIGGER"
 }
 
 ### Service D Activator.

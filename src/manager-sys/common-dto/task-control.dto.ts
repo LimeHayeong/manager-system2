@@ -2,8 +2,8 @@ import { Task } from "src/manager-sys/types/task";
 
 export class TaskStartRequestDTO {
     domain: string;
-    // functionName.
     task: string;
+    taskType: Task.TaskType;
 }
 
 export class TaskActivateRequestDTO {

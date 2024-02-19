@@ -22,9 +22,13 @@ export abstract class BaseService {
         if(chain){
             result.chain = chain;
         }
-
-     
-      await this.managerService.logTask(context, result, Task.LogLevel.INFO);
+        
+        const workId = this.cls.get('workId');
+        if(workId){
+            await this.managerService.logTask(context, result, Task.LogLevel.INFO, workId);
+        }else{
+            await this.managerService.logTask(context, result, Task.LogLevel.INFO);
+        }
     }
 
     protected async warn(data: string, chain?: string) {
@@ -41,7 +45,12 @@ export abstract class BaseService {
             result.chain = chain;
         }
 
-        await this.managerService.logTask(context, result, Task.LogLevel.WARN);
+        const workId = this.cls.get('workId');
+        if(workId){
+            await this.managerService.logTask(context, result, Task.LogLevel.WARN, workId);
+        }else{
+            await this.managerService.logTask(context, result, Task.LogLevel.WARN);
+        }
     }
 
     protected async error(data: string | Error,
@@ -73,22 +82,27 @@ export abstract class BaseService {
             result.chain = chain;
         }
 
-        await this.managerService.logTask(context, result, Task.LogLevel.ERROR);
+        const workId = this.cls.get('workId');
+        if(workId){
+            await this.managerService.logTask(context, result, Task.LogLevel.ERROR, workId);
+        }else{
+            await this.managerService.logTask(context, result, Task.LogLevel.ERROR);
+        }
     }
 
     // HTTP context
     // manager service에서 exception으로 flow control
     async triggerTask(data: TaskStartRequestDTO): Promise<string> {
-        const { domain, task } = data;
+        const { domain, task, taskType } = data;
     
-        const taskId = { domain, task, taskType: Task.TaskType.TRIGGER}
+        const taskId = { domain, task, taskType }
         this.managerService.isValidTask(taskId)
         // await this.managerService.test();
         this.managerService.isRunning(taskId)
         this.managerService.isActivated(taskId)
     
         if(typeof this[task] === 'function') {
-            this[task]('TRIGGER');
+            this[task](taskType);
             return `${domain}:${task} 시작 요청에 성공했습니다.`
         } else {
             throw new NotFoundException(`${domain}:${task}를 찾을 수 없습니다.`)
