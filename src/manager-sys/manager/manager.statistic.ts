@@ -5,65 +5,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
-
-const newTaskStatistic: Task.StatisticLog[] = [
-    {
-        domain: 'ServiceA',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceA',
-        task: 'processRT',
-        taskType: Task.TaskType.CRON,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceB',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceB',
-        task: 'processRT',
-        taskType: Task.TaskType.CRON,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceC',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceC',
-        task: 'processHelper',
-        taskType: Task.TaskType.TRIGGER,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-    {
-        domain: 'ServiceD',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        executionTime: null,
-        data: null,
-        timestamp: null,
-    },
-]
+import { newTaskStatistic } from './task-state.template';
 
 // Q. taskIdx 찾는 과정이 manager랑 같이 있음. 이게 맞을까?
 // 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.

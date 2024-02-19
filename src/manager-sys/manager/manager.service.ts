@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
+import { newTasks, newWorks } from './manager.state.template';
 
 import { LoggerService } from '../logger/logger.service';
 import { ManagerStatistic } from './manager.statistic';
@@ -8,94 +9,6 @@ import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
 import { v4 as uuid } from 'uuid'
-
-const newTasks: Task.TaskStatewithLogs[] = [
-    {
-        domain: 'ServiceA',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        status: Task.TaskStatus.TERMINATED,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]],
-    },
-    {
-        domain: 'ServiceA',
-        task: 'processRT',
-        taskType: Task.TaskType.CRON,
-        status: Task.TaskStatus.WAITING,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]]
-    },
-    {
-        domain: 'ServiceB',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        status: Task.TaskStatus.TERMINATED,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]],
-    },
-    {
-        domain: 'ServiceB',
-        task: 'processRT',
-        taskType: Task.TaskType.CRON,
-        status: Task.TaskStatus.WAITING,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]]
-    },
-    {
-        domain: 'ServiceC',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        status: Task.TaskStatus.TERMINATED,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]],
-    },
-    {
-        domain: 'ServiceC',
-        task: 'processHelper',
-        taskType: Task.TaskType.TRIGGER,
-        status: Task.TaskStatus.TERMINATED,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]],
-    },
-    {
-        domain: 'ServiceD',
-        task: 'processRT',
-        taskType: Task.TaskType.TRIGGER,
-        status: Task.TaskStatus.TERMINATED,
-        contextId: null,
-        isAvailable: true,
-        updatedAt: null,
-        startAt: null,
-        endAt: null,
-        recentLogs: [[]],
-    },
-];
-const newWorks: Task.WorkState[] = []
 
 // TODO: Configuration
 const maxLogsNumber = 3;
