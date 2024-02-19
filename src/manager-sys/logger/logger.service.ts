@@ -8,8 +8,8 @@ const fileInterval = 5000;
 const consoleInterval = 1000;
 // 실제로는 5분 정도로 해도 괜찮다. 1000 * 60 * 5
 const statisticInterval = 1000 * 1;
-const tempfilename = 'log4.json'
-const tempstatisticfilename = 'log-statistic.json'
+const tempfilename = 'logs/log4.json'
+const tempstatisticfilename = 'logs/log-statistic.json'
 
 // TODO: Error handling
 @Injectable()

@@ -39,8 +39,4 @@ lerna-debug.log*
 /test/*
 
 # log files
-log.json
-log2.json
-log3.json
-log4.json
-log-statistic.json
+/logs/*

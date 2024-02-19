@@ -66,7 +66,7 @@ const newTaskStatistic: Task.StatisticLog[] = [
     },
 ]
 
-const logFilePath = './log-statistic.json'
+const logFilePath = 'logs/log-statistic.json'
 
 // Q. taskIdx 찾는 과정이 manager랑 같이 있음. 이게 맞을까?
 // 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.
