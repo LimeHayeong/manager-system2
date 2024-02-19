@@ -126,16 +126,14 @@ export class ManagerStatistic {
     private async readLogsFullFile(
         filePath: string,
         conditionCheck: (obj: any) => boolean,
-        maxResults: number = 300,
+        maxResults: number = 30,
     ): Promise<Task.StatisticLog[]> {
         // 파일 전체 내용을 비동기적으로 읽기
         // const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
-        console.time('readLogsFullFile');
-        const fileContent = fs.readFileSync('logs/log2.json', { encoding: 'utf-8' });
+        const fileContent = fs.readFileSync('logs/log-statistic.json', { encoding: 'utf-8' });
         
         // 파일 내용을 줄바꿈 기준으로 분할하여 배열 생성, 뒤에서부터 검색
         const lines = fileContent.split(/\r?\n/).reverse();
-        console.log(lines.length)
         
         const matchingLogs: Task.StatisticLog[] = [];
 
@@ -153,7 +151,6 @@ export class ManagerStatistic {
                 }
             }
         }
-        console.timeEnd('readLogsFullFile')
         return matchingLogs;
     }
 }
