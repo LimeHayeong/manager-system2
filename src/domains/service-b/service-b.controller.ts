@@ -2,7 +2,7 @@ import { Body, Controller, Post, Req, Res, UseFilters, UseInterceptors } from '@
 
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 import { ServiceBService } from './service-b.service';
-import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../common-dto/task-control.dto';
+import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../../manager-sys/common-dto/task-control.dto';
 import { ApiResponse } from 'src/manager-sys/types/api.response';
 import { Request, Response } from 'express';
 import { CustomInterceptor } from 'src/manager-sys/global.interceptor';

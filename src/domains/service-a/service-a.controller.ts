@@ -1,7 +1,7 @@
-import { Body, Controller, Post, Req, Res, UseFilters, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseFilters, UseInterceptors } from '@nestjs/common';
 
 import { ServiceAService } from './service-a.service';
-import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../common-dto/task-control.dto';
+import { TaskActivateRequestDTO, TaskStartRequestDTO, TaskStatisticRequestDTO } from '../../manager-sys/common-dto/task-control.dto';
 import { Request, Response } from 'express';
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 import { ApiResponse } from 'src/manager-sys/types/api.response';
@@ -40,6 +40,22 @@ export class ServiceAController {
             success: true,
             statusCode: 200,
             message: message,
+        }
+        res.status(200).json(response);
+    }
+
+    @Get('/statistic')
+    async getStatistic(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: TaskStatisticRequestDTO,
+    ) {
+        const statistic = await this.service.getStatistic(query);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: `${query.domain}:${query.task}:${query.taskType} 조회 성공`,
+            data: statistic,
         }
         res.status(200).json(response);
     }

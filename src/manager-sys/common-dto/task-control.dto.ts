@@ -12,3 +12,12 @@ export class TaskActivateRequestDTO {
     taskType: Task.TaskType;
     active: boolean;
 }
+
+export class TaskStatisticRequestDTO {
+    domain: string;
+    task: string;
+    taskType: Task.TaskType;
+    number?: number;
+    from?: number;
+    to?: number;
+}

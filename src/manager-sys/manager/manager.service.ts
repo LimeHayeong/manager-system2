@@ -5,6 +5,7 @@ import { LoggerService } from '../logger/logger.service';
 import { ManagerStatistic } from './manager.statistic';
 import { Task } from '../types/task';
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
+import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
 import { v4 as uuid } from 'uuid'
 
@@ -130,7 +131,7 @@ export class ManagerService {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`, )
+            throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}를 찾을 수 없습니다.`, )
         }else{
             if(this.taskStates[taskIdx].isAvailable === activate){
                 // 이미 활성화/비활성화 되어있으면, 
@@ -339,7 +340,7 @@ export class ManagerService {
         const taskIdx = this.findTask(taskId);
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            throw new Error(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 존재하지 않습니다.`)
+            throw new Error(`${taskId.domain}:${taskId.task}:${taskId.taskType}를 찾을 수 없습니다.`)
         }else{
             const currentTask = this.taskStates[taskIdx];
             const lastLogSeq = currentTask.recentLogs[currentTask.recentLogs.length - 1].length - 1;
@@ -357,7 +358,7 @@ export class ManagerService {
         const taskIdx = this.findTask({ domain, task, taskType });
         if(taskIdx === -1){
             // 찾는 task가 없으면,
-            throw new Error(`${domain}:${task}:${taskType}는 존재하지 않습니다.`)
+            throw new Error(`${domain}:${task}:${taskType}를 찾을 수 없습니다.`)
         }else{
             const currentTask = this.taskStates[taskIdx];
             const recentLogIdx = currentTask.recentLogs.length - 1;
@@ -376,5 +377,11 @@ export class ManagerService {
             }
         }
         return eventData;
+    }
+
+    public async getTaskStatistic(
+        data: TaskStatisticRequestDTO
+    ): Promise<Task.StatisticLog[]> {
+        return await this.statistic.getTaskStatistic(data);
     }
 }

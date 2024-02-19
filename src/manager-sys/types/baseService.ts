@@ -1,4 +1,4 @@
-import { TaskActivateRequestDTO, TaskStartRequestDTO } from "src/domains/common-dto/task-control.dto";
+import { TaskActivateRequestDTO, TaskStartRequestDTO, TaskStatisticRequestDTO } from "src/manager-sys/common-dto/task-control.dto";
 
 import { ClsService } from "nestjs-cls";
 import { ManagerService } from "../manager/manager.service";
@@ -104,6 +104,12 @@ export abstract class BaseService {
         this.managerService.controlTask({domain, task, taskType}, active);
     
         return `${domain}:${task}:${taskType} ${active ? '활성화' : '비활성화'} 요청에 성공했습니다.`
+    }
+
+    async getStatistic(
+        data: TaskStatisticRequestDTO
+    ): Promise<Task.StatisticLog[]> {
+        return await this.managerService.getTaskStatistic(data);
     }
 
     private trimErrorStack(error: Error, numberOfLines: number): string[] {

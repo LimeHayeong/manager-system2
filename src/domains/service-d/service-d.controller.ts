@@ -2,7 +2,7 @@ import { Body, Controller, Post, Req, Res, UseFilters } from '@nestjs/common';
 
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 import { ServiceDService } from './service-d.service';
-import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../common-dto/task-control.dto';
+import { TaskActivateRequestDTO, TaskStartRequestDTO } from '../../manager-sys/common-dto/task-control.dto';
 import { Request, Response } from 'express';
 import { ApiResponse } from 'src/manager-sys/types/api.response';
 
