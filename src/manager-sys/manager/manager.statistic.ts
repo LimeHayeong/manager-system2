@@ -5,7 +5,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
-import { newTaskStatistic } from './task-state.template';
+import { newTaskStatistic } from './manager.state.template';
 
 // Q. taskIdx 찾는 과정이 manager랑 같이 있음. 이게 맞을까?
 // 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.
