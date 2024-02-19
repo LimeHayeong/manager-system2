@@ -44,6 +44,7 @@ export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   afterInit(server: Server) {
+    this.gatewaySettled = true;
     console.log('[System] Websocket receive-gateway initialized');
   }
 
