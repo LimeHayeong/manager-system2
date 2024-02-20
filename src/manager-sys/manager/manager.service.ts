@@ -54,11 +54,6 @@ export class ManagerService {
         }
     }
 
-    public async test() {
-        // throw new Error('hi');
-        // throw new BadRequestException('test error')
-    }
-
     public isActivated(taskId: Task.ITaskIdentity) {
         const taskIdx = this.findTask(taskId);
         if(this.taskStates[taskIdx].isAvailable === false){
@@ -144,7 +139,8 @@ export class ManagerService {
         
         // wsGateway 데이터 전송
         const eventData = {
-            taskStates: this.getTaskStatesNoLogs()
+            taskStates: this.getTaskStatesNoLogs(),
+            workStates: this.getWorkStateswithTasksNoLogs()
         }
         this.wsGateway.emitTaskStateUpdate(eventData);
     }
@@ -204,7 +200,8 @@ export class ManagerService {
 
         // wsGateway 데이터 전송
         const eventData = {
-            taskStates: this.getTaskStatesNoLogs()
+            taskStates: this.getTaskStatesNoLogs(),
+            workStates: this.getWorkStateswithTasksNoLogs()
         }
         this.wsGateway.emitTaskStateUpdate(eventData);
     };
@@ -226,7 +223,7 @@ export class ManagerService {
         return true
     }
 
-    public async startWork(workId: Task.IWorkIdentity, contextId: string): Promise<string> {
+    public async startWork(workId: Task.IWorkIdentity, contextId: string) {
         const workIdx = this.findWork(workId);
         const currentWork = this.workStates[workIdx];
         const dateNow = Date.now();
@@ -241,9 +238,13 @@ export class ManagerService {
         const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
         // TODO: statistic 추가.
         this.logTransfer(newLog);
-        // wsGateway 전송
 
-        return currentWork.contextId;
+        // wsGateway 전송
+        const eventData = {
+            taskStates: this.getTaskStatesNoLogs(),
+            workStates: this.getWorkStateswithTasksNoLogs()
+        }
+        this.wsGateway.emitTaskStateUpdate(eventData);
     }
 
     public async endWork(workId: Task.IWorkIdentity) {
@@ -259,7 +260,13 @@ export class ManagerService {
         const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         // TODO: statistic 추가.
         this.logTransfer(newLog);
+        
         // wsGateway 전송
+        const eventData = {
+            taskStates: this.getTaskStatesNoLogs(),
+            workStates: this.getWorkStateswithTasksNoLogs()
+        }
+        this.wsGateway.emitTaskStateUpdate(eventData);
     }
 
     private getTaskState(taskId: Task.ITaskIdentity): Task.TaskStatewithLogs {
@@ -329,10 +336,25 @@ export class ManagerService {
         })
     }
 
+    // workStates에 recentLogs를 제외한 taskList(taskStates)를 추가해서 return
+    private getWorkStateswithTasksNoLogs() {
+        return this.workStates.map(workState => {
+            const taskList = workState.taskList.map(task => {
+                const { recentLogs, ...rest } = this.getTaskState(task);
+                return rest;
+            })
+            return {
+                ...workState,
+                taskList
+            }
+        })
+    }
+
 
     public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
         return {
-            taskStates: this.getTaskStatesNoLogs()
+            taskStates: this.getTaskStatesNoLogs(),
+            workStates: this.getWorkStateswithTasksNoLogs()
         }
     }
 

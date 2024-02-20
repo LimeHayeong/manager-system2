@@ -33,7 +33,7 @@ export class SampleWorkService {
             // TODO: build work 실패하면 조치.
             return;
         }
-        const workCtx = await this.manager.startWork(data, this.cls.get('workId'))
+        await this.manager.startWork(data, this.cls.get('workId'))
         await this.serviceA.processRT('WORK');
         await this.serviceB.processRT('WORK');
         await this.serviceD.processRT('WORK');
