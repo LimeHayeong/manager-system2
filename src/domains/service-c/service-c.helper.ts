@@ -16,7 +16,7 @@ export class ServiceCHelper extends BaseService {
     }
 
     @UseCls(Helper.clsBuilder('ServiceC', 'processHelper'))
-    @Helper.AutoManage
+    @Helper.AutoTaskManage
     public async processHelper(context?: string) {
         await this.helpSomething();
     }

@@ -49,7 +49,7 @@ export class ServiceBService extends BaseService {
 
     @Cron('0 */3 * * * *')
     @UseCls(Helper.clsBuilder('ServiceB', 'processRT'))
-    @Helper.AutoManage
+    @Helper.AutoTaskManage
     public async processRT(context?: string) {
         await Promise.all(chains.map(async (chain) => {
             const chainMarketData = await this.doSomethingB(chain);

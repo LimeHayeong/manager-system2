@@ -23,7 +23,7 @@ export class ServiceAService extends BaseService{
 
     @Cron('0/20 * * * * *')
     @UseCls(Helper.clsBuilder('ServiceA', 'processRT'))
-    @Helper.AutoManage
+    @Helper.AutoTaskManage
     public async processRT(context?: string) {
         const promiseInfo = [];
 

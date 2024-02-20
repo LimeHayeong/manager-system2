@@ -2,7 +2,7 @@ import { delay } from "./delay";
 import { v4 as uuid } from 'uuid';
 
 export namespace Helper {
-    export function clsBuilderWork() {
+    export function clsWorkBuilder() {
         return {
             setup: (cls) => {
                 cls.set('workId', uuid())
@@ -18,9 +18,35 @@ export namespace Helper {
         }
     }
 
+    export function AutoWorkManage(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+
+        descriptor.value = async function(...args: any[]) {
+            try {
+                const data = args[0];
+                if(await this.managerService.buildWork(data)){
+                    // 성공적으로 building에 성공하면,
+                    await this.managerService.startWork(data, this.cls.get('workId'))
+                    try {
+                        // 원래 메서드 실행
+                        const result = await originalMethod.apply(this, args);
+                        return result;
+                    } finally {
+                        // managerService.end 호출
+                        await this.managerService.endWork(data);
+                    }
+                }
+            } catch (e) {
+                console.log('task helper catch: ' + e.stack);
+                throw e;
+            }
+        }
+
+        return descriptor;
+    }
+
     // AutoManageDecorator.ts
-    // Decorator 단점 - 동기적으로 실행되기 때문에 비동기 불가.
-    export function AutoManage(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    export function AutoTaskManage(target: any, propertyName: string, descriptor: PropertyDescriptor) {
         const originalMethod = descriptor.value;
 
         descriptor.value = async function(...args: any[]) {
