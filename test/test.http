@@ -1,6 +1,15 @@
 @URL = 127.0.0.1
-@PORT = 3003
+@PORT = 3001
 ### hi
+
+### Sample work trigger.
+POST http://{{URL}}:{{PORT}}/sampleWork/start HTTP/1.1
+Content-Type: application/json; charset=UTF-8
+
+{
+    "work": "sampleWork",
+    "workType": "TRIGGER"
+}
 
 ### Service A Trigger.
 POST http://{{URL}}:{{PORT}}/serviceA/start HTTP/1.1
@@ -106,3 +115,5 @@ Content-Type: application/json; charset=UTF-8
     "taskType": "TRIGGER",
     "active": true
 }
+
+

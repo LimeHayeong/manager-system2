@@ -21,14 +21,12 @@ export class SampleWorkService {
         private serviceB: ServiceBService,
         private serviceD: ServiceDService,
     ) {
-        this.initialization()
-    }
-    async initialization() {
-        await this.tirggerWork({ work: 'sampleWork', workType: Task.TaskType.TRIGGER })
+        // for test
+       // this.triggerWork();
     }
 
     @UseCls(Helper.clsBuilderWork())
-    async tirggerWork(data?: WorkStartRequestDTO): Promise<void> {
+    public async triggerWork(data?: WorkStartRequestDTO): Promise<void> {
         if(!await this.manager.buildWork(data)){
             // TODO: build work 실패하면 조치.
             return;
