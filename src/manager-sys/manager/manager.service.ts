@@ -29,6 +29,7 @@ export class ManagerService {
 
     private initialization() {
         // TODO: snapshot 만들어서 과거 state 복원 로직 추가
+        this.maxRecentLogs = maxLogsNumber
 
         newTasks.forEach(newTask => this.taskStates.push(newTask));
         newWorks.forEach(newWork => this.workStates.push(newWork));
@@ -329,7 +330,7 @@ export class ManagerService {
     // taskStates에서 recentLogs를 제외하고 return
     private getTaskStatesNoLogs() {
         return this.taskStates
-            .filter(taskState => taskState.taskType !== Task.TaskType.WORK)
+            // .filter(taskState => taskState.taskType !== Task.TaskType.WORK)
             .map(taskState => {
                 const { recentLogs, ...rest } = taskState;
                 return rest;
