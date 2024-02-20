@@ -237,6 +237,7 @@ export class ManagerService {
         // 로그 전송
         const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
         // TODO: statistic 추가.
+        // Q. 과연필요할까? 그냥 statistic에서 병합하는 게 나을 듯.
         this.logTransfer(newLog);
 
         // wsGateway 전송
@@ -259,6 +260,7 @@ export class ManagerService {
         // 로그 전송
         const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         // TODO: statistic 추가.
+        // Q. 과연필요할까? 그냥 statistic에서 병합하는 게 나을 듯.
         this.logTransfer(newLog);
         
         // wsGateway 전송
