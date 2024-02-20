@@ -332,10 +332,12 @@ export class ManagerService {
 
     // taskStates에서 recentLogs를 제외하고 return
     private getTaskStatesNoLogs() {
-        return this.taskStates.map(taskState => {
-            const { recentLogs, ...rest } = taskState;
-            return rest;
-        })
+        return this.taskStates
+            .filter(taskState => taskState.taskType !== Task.TaskType.WORK)
+            .map(taskState => {
+                const { recentLogs, ...rest } = taskState;
+                return rest;
+            });
     }
 
     // workStates에 recentLogs를 제외한 taskList(taskStates)를 추가해서 return
