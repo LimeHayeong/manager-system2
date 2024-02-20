@@ -36,7 +36,6 @@ export class LoggerService {
     }
 
     private initialization() {
-        // TODO: 오래된 로그 삭제하는 로직 필요.
         setInterval(() => this.fileBuffer.length > 0 && this.fileBufferFlush(), this.fileInterval);
         setInterval(() => this.consoleBuffer.length > 0 && this.consoleBufferFlush(), this.consoleInterval);
         setInterval(() => this.statisticBuffer.length > 0 && this.statisticBufferFlush(), this.statisticInterval)

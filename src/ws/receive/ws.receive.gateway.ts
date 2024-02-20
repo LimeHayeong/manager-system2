@@ -25,7 +25,6 @@ export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnec
       // Intialize
 
     } catch(e) {
-      // TODO: Connection error handling
       console.log('try catch here');
       console.error(e);
       client.disconnect();
@@ -37,7 +36,6 @@ export class WsReceiveGateway implements OnGatewayConnection, OnGatewayDisconnec
     try {
 
     } catch(e) {
-      // TODO: Disconnection error handling
       console.error(e);
       client.disconnect();
     }

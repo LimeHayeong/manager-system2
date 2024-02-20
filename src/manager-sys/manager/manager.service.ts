@@ -13,7 +13,6 @@ import { v4 as uuid } from 'uuid'
 // TODO: Configuration
 const maxLogsNumber = 3;
 
-// TODO: Manager service 완성
 @Injectable()
 export class ManagerService {
     private taskStates: Task.TaskStatewithLogs[] = [];
@@ -78,7 +77,6 @@ export class ManagerService {
     }
 
     // Task를 시작하기 전에 실행 가능한지 확인하는 함수.
-    // TODO: build 실패시 각 상황에서 msg 전파
     public async buildTask(taskId: Task.ITaskIdentity): Promise<boolean> {
         // Task 유효성 검사, build level에 문제가 없으면 향후에는 검사 안 함. (고정된 값을 쓰기 때문)
         const currentTask = this.getTaskState(taskId);
@@ -146,7 +144,6 @@ export class ManagerService {
     }
 
     // Task 진행 중 로그 추가
-    // TODO: data- message수정
     public async logTask(taskId: Task.ITaskIdentity, data: any, logLevel: Task.LogLevel, workId?: string) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
@@ -156,9 +153,9 @@ export class ManagerService {
         let newLog;
         if(workId){
             // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.PROCESS, data, dateNow);
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, logLevel, Task.LogTiming.PROCESS, data, dateNow);
         }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, data, dateNow);
+            newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
         }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.taskLogCountIncrease(taskId, logLevel)
@@ -192,7 +189,7 @@ export class ManagerService {
             // work context면,
             newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.endTask(taskId, currentTask.startAt, currentTask.endAt);
@@ -297,7 +294,6 @@ export class ManagerService {
             && workState.workType === WorkId.workType)
     }
 
-    // TODO: data- any 수정
     private logFormat(taskId: Task.ITaskIdentity, contextId: string | object, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
         const log = {
             domain: taskId.domain,
@@ -362,7 +358,6 @@ export class ManagerService {
         }
     }
 
-    // TODO: error 조금 더 세련되게
     public async wsGetTaskLogs(taskId: Task.ITaskIdentity): Promise<TaskStateWithSeqLogsDTO> {
         let eventData;
         const taskIdx = this.findTask(taskId);
@@ -380,7 +375,6 @@ export class ManagerService {
         return eventData;
     }
 
-    // TODO: error 조금 더 세련되게
     public async wsGetNewTaskLogs(domain: string, task: string, taskType: Task.TaskType, startLogSeq: number): Promise<TaskStateWithNewLogsDTO> {
         let eventData;
         const taskIdx = this.findTask({ domain, task, taskType });

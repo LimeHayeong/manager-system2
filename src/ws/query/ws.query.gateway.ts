@@ -34,7 +34,6 @@ export class WsQueryGateway implements OnGatewayConnection, OnGatewayDisconnect{
       }
       this.server.emit('connectResponse', response);
     } catch(e) {
-      // TODO: Connection error handling
       console.log('try catch here');
       console.error(e);
       client.disconnect();
@@ -46,7 +45,6 @@ export class WsQueryGateway implements OnGatewayConnection, OnGatewayDisconnect{
     try {
 
     } catch(e) {
-      // TODO: Disconnection error handling
       console.error(e);
       client.disconnect();
     }
