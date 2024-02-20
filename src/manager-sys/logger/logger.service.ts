@@ -127,7 +127,9 @@ export class LoggerService {
     // Buffer 비우면서 Log 파일에 기록.
     private async fileBufferFlush() {
          // 날짜 기반으로 동적 파일 이름 사용
-         const filename = this.getLogFilename('logs/log');
+        //  const filename = this.getLogFilename('logs/log');
+        // 개인 테스트용
+        const filename = this.getLogFilename('logs/log-5');
          this.flushBufferToFile(this.fileBuffer, filename);
          this.fileBuffer = [];
     }

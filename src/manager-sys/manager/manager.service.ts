@@ -160,9 +160,9 @@ export class ManagerService {
         let newLog;
         if(workId){
             // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.PROCESS, data, dateNow);
         }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, data, dateNow);
         }
         currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
         await this.statistic.taskLogCountIncrease(taskId, logLevel)
@@ -194,7 +194,7 @@ export class ManagerService {
         let newLog;
         if(workId){
             // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
         }else{
             newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
         }
