@@ -21,7 +21,8 @@ export class SampleWorkController {
         @Res() res: Response,
         @Body() data: WorkStartRequestDTO,
     ) {
-        await this.service.triggerWork(data);
+        // 임시로 그냥 바로 응답하게.
+        this.service.triggerWork(data);
         const response: ApiResponse = {
             success: true,
             statusCode: 200,

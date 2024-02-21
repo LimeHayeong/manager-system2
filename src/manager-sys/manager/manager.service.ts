@@ -28,7 +28,6 @@ export class ManagerService {
     }
 
     private initialization() {
-        // TODO: snapshot 만들어서 과거 state 복원 로직 추가
         this.maxRecentLogs = maxLogsNumber
 
         newTasks.forEach(newTask => this.taskStates.push(newTask));
@@ -45,18 +44,17 @@ export class ManagerService {
         if(taskIdx === -1){
             // 찾는 task가 없으면,
             throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}를 찾을 수 없습니다.`, )
-        }else{
-            if(this.taskStates[taskIdx].isAvailable === activate){
-                // 이미 활성화/비활성화 되어있으면, 
-                throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 이미 ${activate ? '활성화' : '비활성화'} 되어있습니다.`)
-            }
-            this.taskStates[taskIdx].isAvailable = activate;
         }
+        if(this.taskStates[taskIdx].isAvailable){
+            // 이미 활성화/비활성화 되어있으면, 
+            throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 이미 ${activate ? '활성화' : '비활성화'} 되어있습니다.`)
+        }
+        this.taskStates[taskIdx].isAvailable = activate;
     }
 
     public isActivated(taskId: Task.ITaskIdentity) {
         const taskIdx = this.findTask(taskId);
-        if(this.taskStates[taskIdx].isAvailable === false){
+        if(!this.taskStates[taskIdx].isAvailable){
             throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 비활성화 되어있습니다.`)
         }
     }
@@ -81,14 +79,14 @@ export class ManagerService {
     public async buildTask(taskId: Task.ITaskIdentity): Promise<boolean> {
         // Task 유효성 검사, build level에 문제가 없으면 향후에는 검사 안 함. (고정된 값을 쓰기 때문)
         const currentTask = this.getTaskState(taskId);
-        if(currentTask == null) { 
+        if(!currentTask) { 
             // task가 없으면, false 반환
             // Q. 맞을까? 이러면 미리 다 선언하긴 해야함.
             // console.log(`[System] task not found - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
         }
 
-        if(currentTask.isAvailable === false){
+        if(!currentTask.isAvailable){
             // task가 실행 불가능하면, false 반환.
             // console.log(`[System] task is not available - ${taskId.domain}:${taskId.task}:${taskId.taskType}`)
             return false;
@@ -124,15 +122,17 @@ export class ManagerService {
             currentTask.recentLogs.push([]);
         }
 
-        // 로그 추가 및 전송
-        let newLog;
+        // 로그 추가
+        let logContext;
         if(workId){
-            // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
-        }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+            // work context가 있으면 넣어준다.
+            logContext.work = workId;
         }
-        currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
+        logContext.contextId = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        this.pushLogToTask(currentTask, newLog);
+
+        // 로그 통계 추가 및 전송
         await this.statistic.startTask(taskId);
         this.logTransfer(newLog);
         
@@ -151,22 +151,19 @@ export class ManagerService {
     
         currentTask.updatedAt = dateNow;
         
-        let newLog;
+        // 로그 추가
+        let logContext;
         if(workId){
-            // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, logLevel, Task.LogTiming.PROCESS, data, dateNow);
-        }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, logLevel, Task.LogTiming.PROCESS, data, dateNow);
+            // work context가 있으면 넣어준다.
+            logContext.work = workId;
         }
-        currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
-        await this.statistic.taskLogCountIncrease(taskId, logLevel)
+        logContext.contextId = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, logLevel, Task.LogTiming.PROCESS, data, dateNow);
+        this.pushLogToTask(currentTask, newLog)
         
-        if (logLevel === Task.LogLevel.INFO) {
-            // Info면 console에 출력 안 함.
-            this.logTransferNoConsole(newLog);
-        } else {
-            this.logTransfer(newLog);
-        }
+        // 로그 통계 추가 및 전송
+        await this.statistic.taskLogCountIncrease(taskId, logLevel)
+        this.logTransfer(newLog);
     }
 
     // Task 종료, taskIdentity로 taskIdx 찾아서 상태 update.
@@ -185,14 +182,17 @@ export class ManagerService {
         currentTask.updatedAt = dateNow
         currentTask.endAt = dateNow
 
-        let newLog;
+        // 로그 추가
+        let logContext;
         if(workId){
-            // work context면,
-            newLog = this.logFormat(taskId, { work: workId, task: currentTask.contextId }, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
-        }else{
-            newLog = this.logFormat(taskId, currentTask.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+            // work context가 있으면 넣어준다.
+            logContext.work = workId;
         }
-        currentTask.recentLogs[currentTask.recentLogs.length - 1].push(newLog);
+        logContext.contextId = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+        this.pushLogToTask(currentTask, newLog)
+
+        // 로그 통계 추가 및 전송
         await this.statistic.endTask(taskId, currentTask.startAt, currentTask.endAt);
         this.logTransfer(newLog);
 
@@ -206,7 +206,7 @@ export class ManagerService {
 
     public async buildWork(workId: Task.IWorkIdentity): Promise<boolean> {
         const currentWork = this.workStates[this.findWork(workId)];
-        if(currentWork == null) { 
+        if(currentWork) { 
             // work가 없으면, false 반환
             console.log('no work');
             return false;
@@ -295,6 +295,10 @@ export class ManagerService {
             && workState.workType === WorkId.workType)
     }
 
+    private pushLogToTask(task: Task.TaskStatewithLogs, log: Task.Log) {
+        task.recentLogs[task.recentLogs.length - 1].push(log);
+    }
+
     private logFormat(taskId: Task.ITaskIdentity, contextId: string | object, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
         const log = {
             domain: taskId.domain,
@@ -319,14 +323,12 @@ export class ManagerService {
     }
 
     private async logTransfer(log: Task.Log) {
-        this.logger.pushConsoleLog(log);
+        if(log.level !== Task.LogLevel.INFO || log.logTiming === (Task.LogTiming.START || Task.LogTiming)){
+            this.logger.pushConsoleLog(log);
+        }
         this.logger.pushFileLog(log);
     }
-
-    private async logTransferNoConsole(log: Task.Log){
-        this.logger.pushFileLog(log);
-    }
-
+    
     // taskStates에서 recentLogs를 제외하고 return
     private getTaskStatesNoLogs() {
         return this.taskStates
