@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { StateFactory, TaskIdentity, WorkIdentity } from '../types/state.template';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
-import { newTasks, newWorks } from './manager.state.template';
 
 import { LoggerService } from '../logger/logger.service';
 import { ManagerStatistic } from './manager.statistic';
@@ -17,7 +17,7 @@ const maxLogsNumber = 3;
 export class ManagerService {
     private taskStates: Task.TaskStatewithLogs[] = [];
     private workStates: Task.WorkState[] = [];
-    private maxRecentLogs;
+    private maxRecentLogs: number;
 
     constructor(
         private readonly wsGateway: WsReceiveGateway,
@@ -30,11 +30,13 @@ export class ManagerService {
     private initialization() {
         this.maxRecentLogs = maxLogsNumber
 
-        newTasks.forEach(newTask => this.taskStates.push(newTask));
-        newWorks.forEach(newWork => this.workStates.push(newWork));
+        TaskIdentity.forEach(taskId => this.taskStates.push(StateFactory.createTaskState(taskId)));
+        WorkIdentity.forEach(workId => this.workStates.push(StateFactory.createWorkState(workId)));
 
         console.log('[System] ManagerService initialized');
     }
+
+    private 
 
     // Task를 활성화하거나 비활성화함.
     // activate가 true인 경우 활성화, false인 경우 비활성화
@@ -128,7 +130,12 @@ export class ManagerService {
         this.pushLogToTask(currentTask, newLog);
 
         // 로그 통계 추가 및 전송
-        await this.statistic.startTask(taskId);
+        if(workId){
+            await this.statistic.startTask(taskId, workId);
+        }else{
+            await this.statistic.startTask(taskId, currentTask.contextId);
+        }
+        
         this.logTransfer(newLog);
         
         // wsGateway 데이터 전송
@@ -190,17 +197,15 @@ export class ManagerService {
     };
 
     public async buildWork(workId: Task.IWorkIdentity): Promise<boolean> {
-        const currentWork = this.workStates[this.findWork(workId)];
-        if(currentWork) { 
-            // work가 없으면, false 반환
+        const workIdx = this.findWork(workId);
+        if(workIdx === -1){
             console.log('no work');
             return false;
-        }
-
-        if(currentWork.status === Task.TaskStatus.PROGRESS){
-            // work가 실행 중이면, false 반환.
-            console.log('work is already in progress');
-            return false;
+        }else{
+            if(this.workStates[workIdx].status === Task.TaskStatus.PROGRESS){
+                console.log('work is already in progress');
+                return false;
+            }
         }
 
         return true

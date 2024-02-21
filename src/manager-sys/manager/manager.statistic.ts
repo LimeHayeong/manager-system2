@@ -1,17 +1,21 @@
 import * as fs from 'fs';
 
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
-import { newTaskStatistic } from './manager.state.template';
+
+const maxStatisticNumber = 30;
 
 // Q. taskIdx 찾는 과정이 manager랑 같이 있음. 이게 맞을까?
 // 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.
+// Q. State로 갖고 있을 거면, 솔직히 파일 뒤적거릴 필요도 없음. 그냥 State에서 찾으면 됨.
 @Injectable()
 export class ManagerStatistic {
-    private taskStatistic: Task.StatisticLog[] = [];
+    private statisticState: Task.TaskStatisticState[] = [];
+    private maxStatisticNumber: number;
 
     constructor(
         private readonly logger: LoggerService,
@@ -20,26 +24,34 @@ export class ManagerStatistic {
     }
 
     private initialization() {
-        newTaskStatistic.forEach(newTaskStatistic => this.taskStatistic.push(newTaskStatistic));
+        this.maxStatisticNumber = maxStatisticNumber;
+
+        TaskIdentity.forEach(taskId => this.statisticState.push(StateFactory.createTaskStatisticState(taskId)));
+
+        console.log('[System] ManagerStatistic initialized');
     }
 
-    public async startTask(taskId: Task.ITaskIdentity){
+    public async startTask(taskId: Task.ITaskIdentity, contextId: string){
         const taskIdx = this.findTask(taskId);
         if(taskIdx !== -1){
             // 시작할 때 데이터 초기화.
-            const currentTaskStatistic = this.taskStatistic[taskIdx]
+            const currentTaskStatistic = this.statisticState[taskIdx]
+            currentTaskStatistic.contextId = contextId;
             currentTaskStatistic.data = this.createNewStatisticData();
-            currentTaskStatistic.timestamp = null;
-            currentTaskStatistic.executionTime = null;
             currentTaskStatistic.data.logCount++;
             currentTaskStatistic.data.infoCount++;
+
+            // recentStatistics push 관련 로직.
+            if(currentTaskStatistic.recentStatistics.length > 30){
+                currentTaskStatistic.recentStatistics.shift();
+            }
         }
     }
 
     public async taskLogCountIncrease(taskId: Task.ITaskIdentity, logType: Task.LogLevel){
         const taskIdx = this.findTask(taskId);
         if(taskIdx !== -1){
-            const currentTaskStatistic = this.taskStatistic[taskIdx]
+            const currentTaskStatistic = this.statisticState[taskIdx]
             currentTaskStatistic.data.logCount++;
             if(logType === Task.LogLevel.INFO){
                 currentTaskStatistic.data.infoCount++;
@@ -54,13 +66,17 @@ export class ManagerStatistic {
     public async endTask(taskId: Task.ITaskIdentity, startAt: number, endAt: number){
         const taskIdx = this.findTask(taskId);
         if(taskIdx !== -1){
-            const currentTaskStatistic = this.taskStatistic[taskIdx]
-            currentTaskStatistic.timestamp = Date.now();
-            currentTaskStatistic.executionTime = endAt - startAt;
+            const currentTaskStatistic = this.statisticState[taskIdx]
             currentTaskStatistic.data.logCount++;
             currentTaskStatistic.data.infoCount++;
-            this.logger.pushStatisticLog({
-                ...currentTaskStatistic})
+            const timestamp = Date.now();
+            const executionTime = endAt - startAt;
+
+            // 끝날 때 로그 만들어서 recentStatistic에도 넣어주고, logger에도 transfer 해야함.
+            const newLog = this.statisticLogFormat(taskId, currentTaskStatistic.data, currentTaskStatistic.contextId, timestamp, executionTime);
+            currentTaskStatistic.recentStatistics.push(newLog);
+
+            this.logger.pushStatisticLog(newLog);
         }
     }
 
@@ -110,8 +126,20 @@ export class ManagerStatistic {
     }
 
     private findTask(taskId: Task.ITaskIdentity): number{
-        const idx = this.taskStatistic.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
+        const idx = this.statisticState.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
         return idx;
+    }
+
+    private statisticLogFormat(taskId: Task.ITaskIdentity, data: Task.taskStatistic, contextId: string, timestamp: number, executionTime: number): Task.StatisticLog {
+        return {
+            domain: taskId.domain,
+            task: taskId.task,
+            taskType: taskId.taskType,
+            contextId: contextId,
+            data,
+            timestamp,
+            executionTime,
+        }
     }
 
     private createNewStatisticData(): Task.taskStatistic {

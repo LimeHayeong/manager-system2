@@ -32,9 +32,18 @@ export namespace Task {
       work?: string
     }
 
+    export interface TaskStatisticState extends ITaskIdentity {
+      contextId: string;
+      data: taskStatistic;
+      recentStatistics: StatisticLogBase[];
+    }
+
+    export interface StatisticLog extends StatisticLogBase, ITaskIdentity {}
+
     // Task 통계를 위한 Log
-    export interface StatisticLog extends ITaskIdentity{
+    export interface StatisticLogBase {
       executionTime: number;
+      contextId: string;
       data: taskStatistic;
       timestamp: number;
     }
@@ -84,6 +93,10 @@ export namespace Task {
       domain: string;
       task: string;
       taskType: TaskType;
+    }
+
+    export interface IWorkIdentitywithTaskList extends IWorkIdentity {
+      taskList: ITaskIdentity[];
     }
 
     export interface IWorkIdentity {
