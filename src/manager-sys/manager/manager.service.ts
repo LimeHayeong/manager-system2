@@ -123,12 +123,7 @@ export class ManagerService {
         }
 
         // 로그 추가
-        let logContext;
-        if(workId){
-            // work context가 있으면 넣어준다.
-            logContext.work = workId;
-        }
-        logContext.task = currentTask.contextId;
+        const logContext = this.logContextFormat(currentTask.contextId, workId);
         const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, {message: 'start'}, dateNow);
         this.pushLogToTask(currentTask, newLog);
 
@@ -152,12 +147,7 @@ export class ManagerService {
         currentTask.updatedAt = dateNow;
         
         // 로그 추가
-        let logContext;
-        if(workId){
-            // work context가 있으면 넣어준다.
-            logContext.work = workId;
-        }
-        logContext.task = currentTask.contextId;
+        const logContext = this.logContextFormat(currentTask.contextId, workId);
         const newLog = this.logFormat(taskId, logContext, logLevel, data, dateNow);
         this.pushLogToTask(currentTask, newLog)
         
@@ -183,12 +173,7 @@ export class ManagerService {
         currentTask.endAt = dateNow
 
         // 로그 추가
-        let logContext;
-        if(workId){
-            // work context가 있으면 넣어준다.
-            logContext.work = workId;
-        }
-        logContext.task = currentTask.contextId;
+        const logContext = this.logContextFormat(currentTask.contextId, workId);
         const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, { message: 'end'}, dateNow);
         this.pushLogToTask(currentTask, newLog)
 
@@ -299,6 +284,18 @@ export class ManagerService {
         task.recentLogs[task.recentLogs.length - 1].push(log);
     }
 
+    private logContextFormat(taskId: string, workId?: string): Task.LogContextId{
+        if(workId){
+            return {
+                task: taskId,
+                work: workId
+            }
+        }
+        return {
+            task: taskId
+        }
+    }
+
     private logFormat(taskId: Task.ITaskIdentity, contextId: object, level: Task.LogLevel, data: Task.IContext, timestamp: number): Task.Log {
         const log = {
             domain: taskId.domain,
@@ -313,7 +310,7 @@ export class ManagerService {
     }
 
     private async logTransfer(log: Task.Log) {
-        if(log.level !== Task.LogLevel.INFO || log.data.message === ('start' || 'end')){
+        if(log.level !== Task.LogLevel.INFO || log.data.message === 'start' || log.data.message === 'end'){
             this.logger.pushConsoleLog(log);
         }
         this.logger.pushFileLog(log);
