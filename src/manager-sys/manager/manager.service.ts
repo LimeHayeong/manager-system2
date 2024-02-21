@@ -45,7 +45,7 @@ export class ManagerService {
             // 찾는 task가 없으면,
             throw new NotFoundException(`${taskId.domain}:${taskId.task}:${taskId.taskType}를 찾을 수 없습니다.`, )
         }
-        if(this.taskStates[taskIdx].isAvailable){
+        if(this.taskStates[taskIdx].isAvailable === activate){
             // 이미 활성화/비활성화 되어있으면, 
             throw new BadRequestException(`${taskId.domain}:${taskId.task}:${taskId.taskType}는 이미 ${activate ? '활성화' : '비활성화'} 되어있습니다.`)
         }
