@@ -159,13 +159,13 @@ export class LoggerService {
             // 검사구문 없으면 더 빠를텐데.
             this.consoleBuffer.map(log => {
                 if(log.data === null){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}]`)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}]`)
                 } else if(typeof log.data !=='string' && 'message' in log.data && 'chain' in log.data){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + `[${log.data.chain}] ` + log.data.message)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + `[${log.data.chain}] ` + log.data.message)
                 } else if(typeof log.data !== 'string' && 'message' in log.data){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data.message)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data.message)
                 } else {
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}][${log.logTiming}] ` + log.data)
+                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data)
                 }
             });
             this.consoleBuffer = [];

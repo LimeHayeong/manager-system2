@@ -11,12 +11,6 @@ export namespace Task {
       ERROR = 'ERROR',
     }
   
-    export enum LogTiming {
-      START = 'START',
-      PROCESS = 'PROCESS',
-      END = 'END',
-    }
-  
     export enum TaskStatus {
       TERMINATED = 'TERMINATED',
       PROGRESS = 'PROGRESS',
@@ -29,7 +23,6 @@ export namespace Task {
       taskType?: TaskType;
       contextId: LogContextId;
       level: LogLevel;
-      logTiming: LogTiming;
       data: IContext | null;
       timestamp: number; // toISOString
     }

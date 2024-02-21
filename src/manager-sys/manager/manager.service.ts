@@ -128,8 +128,8 @@ export class ManagerService {
             // work context가 있으면 넣어준다.
             logContext.work = workId;
         }
-        logContext.contextId = currentTask.contextId;
-        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        logContext.task = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, {message: 'start'}, dateNow);
         this.pushLogToTask(currentTask, newLog);
 
         // 로그 통계 추가 및 전송
@@ -157,8 +157,8 @@ export class ManagerService {
             // work context가 있으면 넣어준다.
             logContext.work = workId;
         }
-        logContext.contextId = currentTask.contextId;
-        const newLog = this.logFormat(taskId, logContext, logLevel, Task.LogTiming.PROCESS, data, dateNow);
+        logContext.task = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, logLevel, data, dateNow);
         this.pushLogToTask(currentTask, newLog)
         
         // 로그 통계 추가 및 전송
@@ -188,8 +188,8 @@ export class ManagerService {
             // work context가 있으면 넣어준다.
             logContext.work = workId;
         }
-        logContext.contextId = currentTask.contextId;
-        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+        logContext.task = currentTask.contextId;
+        const newLog = this.logFormat(taskId, logContext, Task.LogLevel.INFO, { message: 'end'}, dateNow);
         this.pushLogToTask(currentTask, newLog)
 
         // 로그 통계 추가 및 전송
@@ -233,7 +233,7 @@ export class ManagerService {
         currentWork.endAt = null;
 
         // 로그 전송
-        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.START, null, dateNow);
+        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, {work: contextId}, Task.LogLevel.INFO, {message: 'start'}, dateNow);
         // TODO: statistic 추가.
         // Q. 과연필요할까? 그냥 statistic에서 병합하는 게 나을 듯.
         this.logTransfer(newLog);
@@ -256,7 +256,7 @@ export class ManagerService {
         currentWork.endAt = dateNow;
 
         // 로그 전송
-        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, currentWork.contextId, Task.LogLevel.INFO, Task.LogTiming.END, null, dateNow);
+        const newLog = this.logFormat({ domain: 'work', task: workId.work, taskType: workId.workType}, {work: currentWork.contextId}, Task.LogLevel.INFO, {message: 'end'}, dateNow);
         // TODO: statistic 추가.
         // Q. 과연필요할까? 그냥 statistic에서 병합하는 게 나을 듯.
         this.logTransfer(newLog);
@@ -299,31 +299,21 @@ export class ManagerService {
         task.recentLogs[task.recentLogs.length - 1].push(log);
     }
 
-    private logFormat(taskId: Task.ITaskIdentity, contextId: string | object, level: Task.LogLevel, timing: Task.LogTiming, data: Task.IContext, timestamp: number): Task.Log {
+    private logFormat(taskId: Task.ITaskIdentity, contextId: object, level: Task.LogLevel, data: Task.IContext, timestamp: number): Task.Log {
         const log = {
             domain: taskId.domain,
             task: taskId.task,
             taskType: taskId.taskType,
-            contextId: null,
+            contextId: contextId,
             level: level,
-            logTiming: timing,
             data: data,
             timestamp: timestamp
-        }
-        if(typeof contextId === 'string'){
-            if(taskId.domain === 'work'){
-                log.contextId = { work: contextId }
-            }else{
-                log.contextId = { task: contextId }
-            }
-        } else {
-            log.contextId = contextId
         }
         return log
     }
 
     private async logTransfer(log: Task.Log) {
-        if(log.level !== Task.LogLevel.INFO || log.logTiming === (Task.LogTiming.START || Task.LogTiming)){
+        if(log.level !== Task.LogLevel.INFO || log.data.message === ('start' || 'end')){
             this.logger.pushConsoleLog(log);
         }
         this.logger.pushFileLog(log);
