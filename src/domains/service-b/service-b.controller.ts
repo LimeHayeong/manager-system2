@@ -44,20 +44,4 @@ export class ServiceBController {
         }
         res.status(200).json(response);
     }
-
-    @Get('/statistic')
-    async getStatistic(
-        @Req() req: Request,
-        @Res() res: Response,
-        @Query() query: TaskStatisticRequestDTO,
-    ) {
-        const statistic = await this.service.getStatistic(query);
-        const response: ApiResponse = {
-            success: true,
-            statusCode: 200,
-            message: `${query.domain}:${query.task}:${query.taskType} 조회 성공`,
-            data: statistic,
-        }
-        res.status(200).json(response);
-    }
 }

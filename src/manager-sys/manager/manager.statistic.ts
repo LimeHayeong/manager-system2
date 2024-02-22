@@ -5,6 +5,7 @@ import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
+import { TaskHistogramDTO } from './dto/task-statistic.dto';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 
 const maxStatisticNumber = 30;
@@ -28,6 +29,8 @@ export class ManagerStatistic {
 
         TaskIdentity.forEach(taskId => this.statisticState.push(StateFactory.createTaskStatisticState(taskId)));
 
+        // intialization할 때 최근 30치 통계 넣어줄까?
+
         console.log('[System] ManagerStatistic initialized');
     }
 
@@ -38,11 +41,9 @@ export class ManagerStatistic {
             const currentTaskStatistic = this.statisticState[taskIdx]
             currentTaskStatistic.contextId = contextId;
             currentTaskStatistic.data = this.createNewStatisticData();
-            currentTaskStatistic.data.logCount++;
-            currentTaskStatistic.data.infoCount++;
 
             // recentStatistics push 관련 로직.
-            if(currentTaskStatistic.recentStatistics.length > 30){
+            if(currentTaskStatistic.recentStatistics.length > this.maxStatisticNumber){
                 currentTaskStatistic.recentStatistics.shift();
             }
         }
@@ -67,8 +68,6 @@ export class ManagerStatistic {
         const taskIdx = this.findTask(taskId);
         if(taskIdx !== -1){
             const currentTaskStatistic = this.statisticState[taskIdx]
-            currentTaskStatistic.data.logCount++;
-            currentTaskStatistic.data.infoCount++;
             const timestamp = Date.now();
             const executionTime = endAt - startAt;
 
@@ -81,47 +80,56 @@ export class ManagerStatistic {
     }
 
     // HTTP CONTEXT
+    // TODO: 30개 이상이면 파일 검색 해야하는디.
     public async getTaskStatistic(
         data: TaskStatisticRequestDTO
-        ): Promise<Task.StatisticLog[]> {
+        ): Promise<TaskHistogramDTO> {
         const { domain, task, taskType, number, from , to } = data;
         const taskIdx = this.findTask({domain, task, taskType});
-        const logFilePath = 'logs/log-statistic.json'
+        // const logFilePath = 'logs/log-statistic.json'
         if(taskIdx === -1){
-            throw new NotFoundException(`${domain}:${task}:${taskType}는 존재하지 않습니다.`)
+            throw new NotFoundException(`${domain}:${task}:${taskType}를 찾을 수 없습니다.`)
         }else{
-            if(number && from && to){
-                return await this.readLogsFullFile(
-                    logFilePath,
-                    (log: Task.StatisticLog) => {
-                        return (log.domain === domain
-                                && log.task === task
-                                && log.taskType === taskType
-                                && log.timestamp >= from
-                                && log.timestamp <= to)
-                    },
-                    number
-                );
-            } else if(number){
-                return await this.readLogsFullFile(
-                    logFilePath,
-                    (log: Task.StatisticLog) => {
-                        return (log.domain === domain
-                                && log.task === task
-                                && log.taskType === taskType)
-                    },
-                    number
-                );
-
+            const currentTaskStatistic = this.statisticState[taskIdx];
+            return {
+                domain,
+                task,
+                taskType,
+                recentStatistics: currentTaskStatistic.recentStatistics,
             }
-            return await this.readLogsFullFile(
-                logFilePath,
-                (log: Task.StatisticLog) => {
-                    return (log.domain === domain
-                            && log.task === task
-                            && log.taskType === taskType)
-                },
-            );
+
+            // if(number && from && to){
+            //     return await this.readLogsFullFile(
+            //         logFilePath,
+            //         (log: Task.StatisticLog) => {
+            //             return (log.domain === domain
+            //                     && log.task === task
+            //                     && log.taskType === taskType
+            //                     && log.timestamp >= from
+            //                     && log.timestamp <= to)
+            //         },
+            //         number
+            //     );
+            // } else if(number){
+            //     return await this.readLogsFullFile(
+            //         logFilePath,
+            //         (log: Task.StatisticLog) => {
+            //             return (log.domain === domain
+            //                     && log.task === task
+            //                     && log.taskType === taskType)
+            //         },
+            //         number
+            //     );
+
+            // }
+            // return await this.readLogsFullFile(
+            //     logFilePath,
+            //     (log: Task.StatisticLog) => {
+            //         return (log.domain === domain
+            //                 && log.task === task
+            //                 && log.taskType === taskType)
+            //     },
+            // );
         }
     }
 

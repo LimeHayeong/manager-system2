@@ -139,11 +139,9 @@ export class ManagerService {
         this.logTransfer(newLog);
         
         // wsGateway 데이터 전송
-        const eventData = {
-            taskStates: this.getTaskStatesNoLogs(),
-            workStates: this.getWorkStateswithTasksNoLogs()
-        }
-        this.wsGateway.emitTaskStateUpdate(eventData);
+        this.wsGateway.emitTaskStateUpdate(
+            this.getRealtimeCurrentStates()
+        );
     }
 
     // Task 진행 중 로그 추가
@@ -189,11 +187,9 @@ export class ManagerService {
         this.logTransfer(newLog);
 
         // wsGateway 데이터 전송
-        const eventData = {
-            taskStates: this.getTaskStatesNoLogs(),
-            workStates: this.getWorkStateswithTasksNoLogs()
-        }
-        this.wsGateway.emitTaskStateUpdate(eventData);
+        this.wsGateway.emitTaskStateUpdate(
+            this.getRealtimeCurrentStates()
+        );
     };
 
     public async buildWork(workId: Task.IWorkIdentity): Promise<boolean> {
@@ -229,11 +225,9 @@ export class ManagerService {
         this.logTransfer(newLog);
 
         // wsGateway 전송
-        const eventData = {
-            taskStates: this.getTaskStatesNoLogs(),
-            workStates: this.getWorkStateswithTasksNoLogs()
-        }
-        this.wsGateway.emitTaskStateUpdate(eventData);
+        this.wsGateway.emitTaskStateUpdate(
+            this.getRealtimeCurrentStates()
+        );
     }
 
     public async endWork(workId: Task.IWorkIdentity) {
@@ -252,11 +246,9 @@ export class ManagerService {
         this.logTransfer(newLog);
         
         // wsGateway 전송
-        const eventData = {
-            taskStates: this.getTaskStatesNoLogs(),
-            workStates: this.getWorkStateswithTasksNoLogs()
-        }
-        this.wsGateway.emitTaskStateUpdate(eventData);
+        this.wsGateway.emitTaskStateUpdate(
+            this.getRealtimeCurrentStates()
+        );
     }
 
     private getTaskState(taskId: Task.ITaskIdentity): Task.TaskStatewithLogs {
@@ -345,12 +337,15 @@ export class ManagerService {
         })
     }
 
-
-    public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
+    private getRealtimeCurrentStates() {
         return {
             taskStates: this.getTaskStatesNoLogs(),
             workStates: this.getWorkStateswithTasksNoLogs()
         }
+    }
+
+    public async wsGetCurrentStates(): Promise<TaskStatesNoLogsDTO> {
+        return this.getRealtimeCurrentStates()
     }
 
     public async wsGetTaskLogs(taskId: Task.ITaskIdentity): Promise<TaskStateWithSeqLogsDTO> {
@@ -394,11 +389,5 @@ export class ManagerService {
             }
         }
         return eventData;
-    }
-
-    public async getTaskStatistic(
-        data: TaskStatisticRequestDTO
-    ): Promise<Task.StatisticLog[]> {
-        return await this.statistic.getTaskStatistic(data);
     }
 }

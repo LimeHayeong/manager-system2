@@ -24,11 +24,8 @@ export abstract class BaseService {
         }
         
         const workId = this.cls.get('workId');
-        if(workId){
-            await this.managerService.logTask(context, result, Task.LogLevel.INFO, workId);
-        }else{
-            await this.managerService.logTask(context, result, Task.LogLevel.INFO);
-        }
+
+        await this.managerService.logTask(context, result, Task.LogLevel.INFO, workId);
     }
 
     protected async warn(data: string, chain?: string) {
@@ -46,29 +43,20 @@ export abstract class BaseService {
         }
 
         const workId = this.cls.get('workId');
-        if(workId){
-            await this.managerService.logTask(context, result, Task.LogLevel.WARN, workId);
-        }else{
-            await this.managerService.logTask(context, result, Task.LogLevel.WARN);
-        }
+        await this.managerService.logTask(context, result, Task.LogLevel.WARN, workId);
     }
 
     protected async error(data: string | Error,
         chain?: string,
-        options?: {
-            errorStack?: number
-    }) {
+        errorStack: number = 4
+    ) {
         const result: Task.IContext = {
             message: '',
             stack: []
         };
 
-        
-
-        const defaultOptions = { errorStack: 4 };
-        const effectiveOptions = { ...defaultOptions, ...options };
-        if(effectiveOptions.errorStack < 0) effectiveOptions.errorStack = 0;
-        if(effectiveOptions.errorStack > 7) effectiveOptions.errorStack = 7;
+        if(errorStack < 0) errorStack = 4;
+        if(errorStack > 7) errorStack = 7;
 
         const context = this.cls.get('context');
 
@@ -76,18 +64,14 @@ export abstract class BaseService {
             result.message = data;
         } else if (data instanceof Error) {
             result.message = data.message;
-            result.stack = this.trimErrorStack(data, effectiveOptions.errorStack);
+            result.stack = this.trimErrorStack(data, errorStack);
         }   
         if(chain){
             result.chain = chain;
         }
 
         const workId = this.cls.get('workId');
-        if(workId){
-            await this.managerService.logTask(context, result, Task.LogLevel.ERROR, workId);
-        }else{
-            await this.managerService.logTask(context, result, Task.LogLevel.ERROR);
-        }
+        await this.managerService.logTask(context, result, Task.LogLevel.ERROR, workId);
     }
 
     // HTTP context
@@ -118,12 +102,6 @@ export abstract class BaseService {
         this.managerService.controlTask({domain, task, taskType}, active);
     
         return `${domain}:${task}:${taskType} ${active ? '활성화' : '비활성화'} 요청에 성공했습니다.`
-    }
-
-    async getStatistic(
-        data: TaskStatisticRequestDTO
-    ): Promise<Task.StatisticLog[]> {
-        return await this.managerService.getTaskStatistic(data);
     }
 
     private trimErrorStack(error: Error, numberOfLines: number): string[] {
