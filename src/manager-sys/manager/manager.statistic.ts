@@ -73,7 +73,10 @@ export class ManagerStatistic {
 
             // 끝날 때 로그 만들어서 recentStatistic에도 넣어주고, logger에도 transfer 해야함.
             const newLog = this.statisticLogFormat(taskId, currentTaskStatistic.data, currentTaskStatistic.contextId, timestamp, executionTime);
-            currentTaskStatistic.recentStatistics.push(newLog);
+            const { domain, task, taskType, ...remain } = newLog
+            currentTaskStatistic.recentStatistics.push({
+                ...remain
+            });
 
             this.logger.pushStatisticLog(newLog);
         }
@@ -136,7 +139,7 @@ export class ManagerStatistic {
     public getAllStatistic(): Task.TaskStatisticState[] {
         // 일단 CRON만 전달하는데 맞나?
         return this.statisticState
-            .filter(state => state.taskType === Task.TaskType.CRON);
+            .filter(state => state.taskType === Task.TaskType.CRON)
     }
 
     public async getGrid(data: GridRequestDTO): Promise<GridResultDTO> {
