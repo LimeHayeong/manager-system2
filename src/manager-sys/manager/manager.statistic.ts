@@ -40,7 +40,10 @@ export class ManagerStatistic {
             // 시작할 때 데이터 초기화.
             const currentTaskStatistic = this.statisticState[taskIdx]
             currentTaskStatistic.contextId = contextId;
-            currentTaskStatistic.data = this.createNewStatisticData();
+            currentTaskStatistic.data.logCount = 0;
+            currentTaskStatistic.data.infoCount = 0;
+            currentTaskStatistic.data.warnCount = 0;
+            currentTaskStatistic.data.errorCount = 0;
 
             // recentStatistics push 관련 로직.
             if(currentTaskStatistic.recentStatistics.length > this.maxStatisticNumber){
@@ -220,16 +223,7 @@ export class ManagerStatistic {
             executionTime,
         }
     }
-
-    private createNewStatisticData(): Task.taskStatistic {
-        return {
-            logCount: 0,
-            infoCount: 0,
-            warnCount: 0,
-            errorCount: 0,
-        };
-    }
-
+    
     private async readLogsFullFile(
         filePath: string,
         conditionCheck: (obj: any) => boolean,
