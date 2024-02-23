@@ -2,6 +2,12 @@
 @PORT = 3001
 ### hi
 
+### GRID
+GET http://{{URL}}:{{PORT}}/manager/grid?blockNumber=4 HTTP/1.1
+
+### Linechart
+GET http://{{URL}}:{{PORT}}/manager/linechart HTTP/1.1
+
 ### Sample work trigger.
 POST http://{{URL}}:{{PORT}}/sampleWork/start HTTP/1.1
 Content-Type: application/json; charset=UTF-8

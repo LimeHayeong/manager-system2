@@ -6,6 +6,7 @@ import { ManagerStatistic } from './manager.statistic';
 import { Request, Response } from 'express';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from '../types/api.response';
+import { GridRequestDTO } from './dto/task-statistic.dto';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('manager')
@@ -22,12 +23,43 @@ export class ManagerController {
         @Res() res: Response,
         @Query() query: TaskStatisticRequestDTO,
     ) {
-        const statistic = await this.statistic.getTaskStatistic(query);
+        const statistic = this.statistic.getTaskStatistic(query);
         const response: ApiResponse = {
             success: true,
             statusCode: 200,
             message: `${query.domain}:${query.task}:${query.taskType} 조회 성공`,
             data: statistic,
+        }
+        res.status(200).json(response);
+    }
+
+    @Get('/linechart')
+    getAll(
+        @Req() req: Request,
+        @Res() res: Response,
+    ) {
+        const result = this.statistic.getAllStatistic();
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: `모니터링 전체 데이터 조회 성공`,
+            data: result,
+        }
+        res.status(200).json(response);
+    }
+
+    @Get('/grid')
+    async getGrid(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: GridRequestDTO,
+    ) {
+        const result = await this.statistic.getGrid(query);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: `모니터링 전체 데이터 조회 성공`,
+            data: result,
         }
         res.status(200).json(response);
     }

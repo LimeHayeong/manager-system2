@@ -32,6 +32,15 @@ export namespace Task {
       work?: string
     }
 
+    export interface StarttoEnd {
+      start: number;
+      end: number;
+    }
+
+    export interface GRID extends ITaskIdentity {
+      grid: taskStatistic[]
+    }
+
     export interface TaskStatisticState extends ITaskIdentity {
       contextId: string;
       data: taskStatistic;

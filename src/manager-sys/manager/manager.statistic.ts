@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 
+import { GridRequestDTO, GridResultDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
-import { TaskHistogramDTO } from './dto/task-statistic.dto';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 
 const maxStatisticNumber = 30;
@@ -81,9 +81,9 @@ export class ManagerStatistic {
 
     // HTTP CONTEXT
     // TODO: 30개 이상이면 파일 검색 해야하는디.
-    public async getTaskStatistic(
+    public getTaskStatistic(
         data: TaskStatisticRequestDTO
-        ): Promise<TaskHistogramDTO> {
+        ): TaskHistogramDTO {
         const { domain, task, taskType, number, from , to } = data;
         const taskIdx = this.findTask({domain, task, taskType});
         // const logFilePath = 'logs/log-statistic.json'
@@ -133,6 +133,74 @@ export class ManagerStatistic {
         }
     }
 
+    public getAllStatistic(): Task.TaskStatisticState[] {
+        // 일단 CRON만 전달하는데 맞나?
+        return this.statisticState
+            .filter(state => state.taskType === Task.TaskType.CRON);
+    }
+
+    public async getGrid(data: GridRequestDTO): Promise<GridResultDTO> {
+        // TODO: 지금은 상관없는데 파일크기가 커지면 문제 발생할 수 있음.
+        // TODO: Log-statistic 작성하는 친구와 Lock mechanism을 잘 활용해야함.
+        console.time('Grid');
+
+        const blockNumber = data.blockNumber ? data.blockNumber : 24 * 7;
+        const blockSize = data.blockSize ? data.blockSize : 60 * 60 * 1000;
+
+        while(this.logger.getStatisticLogUsing){
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.logger.useStatisticLog();
+
+        const statisticLogFile = fs.readFileSync('logs/log-statistic.json', {encoding: 'utf-8'})
+        const logs = statisticLogFile.trim()
+            .split('\n')
+            .filter(line => line.trim() !== '')
+            .map(line => JSON.parse(line));
+            // JSON 배열로 변환 완료
+        
+        const gridStates = StateFactory.createGrid(TaskIdentity, blockNumber)
+
+        const now = new Date();
+        const nowTimestamp = now.getTime();
+
+        const restTime = nowTimestamp % blockSize;
+        const firstStart = nowTimestamp - restTime;
+        const timeArray = []
+        for(let i = 0; i < blockNumber; i++){
+            timeArray.push({
+                start: firstStart - blockSize * i,
+                end: firstStart - blockSize * (i+1),
+            })
+        }
+
+        logs.forEach(data => {
+            const timeDiff = nowTimestamp - data.timestamp;
+            if(!(timeDiff <= blockNumber * blockSize)) return;
+
+            const idx = Math.floor(timeDiff / blockSize)
+            const currentState = gridStates.find(
+                state => state.domain === data.domain
+                && state.task === data.task
+                && state.taskType === data.taskType
+            )
+
+            if(!currentState) return;
+                
+            currentState.grid[idx].logCount += data.data.logCount;
+            currentState.grid[idx].infoCount += data.data.infoCount;
+            currentState.grid[idx].warnCount += data.data.warnCount;
+            currentState.grid[idx].errorCount += data.data.errorCount;
+        })
+        
+        this.logger.freeStatisticLog();
+        console.timeEnd('Grid');
+        return {
+            time: timeArray,
+            grids: gridStates
+        }
+    }
+
     private findTask(taskId: Task.ITaskIdentity): number{
         const idx = this.statisticState.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
         return idx;
@@ -166,6 +234,11 @@ export class ManagerStatistic {
     ): Promise<Task.StatisticLog[]> {
         // 파일 전체 내용을 비동기적으로 읽기
         // const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
+        while(this.logger.getStatisticLogUsing){
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.logger.useStatisticLog();
+
         const fileContent = fs.readFileSync('logs/log-statistic.json', { encoding: 'utf-8' });
         
         // 파일 내용을 줄바꿈 기준으로 분할하여 배열 생성, 뒤에서부터 검색
@@ -187,6 +260,8 @@ export class ManagerStatistic {
                 }
             }
         }
+
+        this.logger.freeStatisticLog();
         return matchingLogs;
     }
 }

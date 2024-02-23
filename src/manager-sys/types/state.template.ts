@@ -44,6 +44,18 @@ export class StateFactory {
             taskList: workId.taskList
         }
     }
+
+    static createGrid(taskIds: Task.ITaskIdentity[], length: number): Task.GRID[] {
+        return taskIds.map(taskId => ({
+                ...taskId,
+                grid: Array.from({ length: length }, () => ({
+                    logCount: 0,
+                    infoCount: 0,
+                    warnCount: 0,
+                    errorCount: 0
+                }))
+        }))
+    }
 }
 
 export const TaskIdentity: Task.ITaskIdentity[] = [

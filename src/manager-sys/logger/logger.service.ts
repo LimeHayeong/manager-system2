@@ -135,11 +135,22 @@ export class LoggerService {
         this.statisticBuffer.push(log);
     }
 
+    public getStatisticLogUsing(): boolean {
+        return this.isStatisticLogUsing
+    }
+
+    public useStatisticLog() {
+        this.isStatisticLogUsing = true;
+    }
+    public freeStatisticLog() {
+        this.isStatisticLogUsing = false;
+    }
+
     private async statisticBufferFlush() {
         // 혹시라도 사용 중이면 대기
         while (this.isStatisticLogUsing) {
             await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+        }
         this.isStatisticLogUsing = true;
 
         const filename = 'logs/log-statistic.json';
