@@ -48,11 +48,6 @@ export class ManagerStatistic implements OnModuleInit {
             currentTaskStatistic.data.infoCount = 0;
             currentTaskStatistic.data.warnCount = 0;
             currentTaskStatistic.data.errorCount = 0;
-
-            // recentStatistics push 관련 로직.
-            if(currentTaskStatistic.recentStatistics.length > this.maxStatisticNumber){
-                currentTaskStatistic.recentStatistics.shift();
-            }
         }
     }
 
@@ -81,6 +76,10 @@ export class ManagerStatistic implements OnModuleInit {
             // 끝날 때 로그 만들어서 recentStatistic에도 넣어주고, logger에도 transfer 해야함.
             const newLog = this.statisticLogFormat(taskId, currentTaskStatistic.data, currentTaskStatistic.contextId, timestamp, executionTime);
             const { domain, task, taskType, ...remain } = newLog
+            // recentStatistics push 관련 로직.
+            if(currentTaskStatistic.recentStatistics.length > this.maxStatisticNumber){
+                currentTaskStatistic.recentStatistics.shift();
+            }
             currentTaskStatistic.recentStatistics.push({
                 ...remain
             });
@@ -146,7 +145,13 @@ export class ManagerStatistic implements OnModuleInit {
     public getAllStatistic(taskType?: Task.TaskType): Task.TaskStatisticState[] {
         // 일단 CRON만 전달하는데 맞나?
         return this.statisticState
-            .filter(state => taskType === undefined || state.taskType === taskType);
+            .filter(state => taskType === undefined || state.taskType === taskType)
+            .map(state => {
+                return {
+                    ...state,
+                    recentNumbers: state.recentStatistics.length,
+                }
+            })
     }
 
     public async getGrid(data: GridRequestDTO): Promise<GridResultDTO> {

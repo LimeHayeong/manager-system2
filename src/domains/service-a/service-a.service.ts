@@ -34,7 +34,7 @@ export class ServiceAService extends BaseService{
             chainChunk.map(async (chain: string) => {
                     const chainInfo = await this.doSomethingA2(chain);
 
-                    if (chainInfo) {
+                    if (chainInfo.price) {
                         try {
                             await this.doSomethingA(chainInfo);
                         } catch (e) {

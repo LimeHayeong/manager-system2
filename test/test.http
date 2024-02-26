@@ -4,9 +4,14 @@
 
 ### GRID
 GET http://{{URL}}:{{PORT}}/manager/grid?blockNumber=4 HTTP/1.1
+### GRID-default
+GET http://{{URL}}:{{PORT}}/manager/grid HTTP/1.1
 
 ### Linechart
 GET http://{{URL}}:{{PORT}}/manager/linechart HTTP/1.1
+
+### Histogram
+GET http://{{URL}}:{{PORT}}/manager/histogram?domain=ServiceA&task=processRT&taskType=CRON HTTP/1.1
 
 ### TEST
 GET http://{{URL}}:{{PORT}}/manager/test HTTP/1.1
