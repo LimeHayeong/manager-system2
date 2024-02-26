@@ -2,11 +2,11 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { StateFactory, TaskIdentity, WorkIdentity } from '../types/state.template';
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
 
+import { LogQueryDTO } from './dto/task-statistic.dto';
 import { LoggerService } from '../logger/logger.service';
 import { ManagerStatistic } from './manager.statistic';
 import { Task } from '../types/task';
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
-import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { WsReceiveGateway } from 'src/ws/receive/ws.receive.gateway';
 import { v4 as uuid } from 'uuid'
 
@@ -35,8 +35,6 @@ export class ManagerService {
 
         console.log('[System] ManagerService initialized');
     }
-
-    private 
 
     // Task를 활성화하거나 비활성화함.
     // activate가 true인 경우 활성화, false인 경우 비활성화
@@ -249,6 +247,11 @@ export class ManagerService {
         this.wsGateway.emitTaskStateUpdate(
             this.getRealtimeCurrentStates()
         );
+    }
+
+    public async queryLog(query: LogQueryDTO){
+        // 어떤 파일을 읽을지 from, to를 통해 날짜 연산.
+
     }
 
     private getTaskState(taskId: Task.ITaskIdentity): Task.TaskStatewithLogs {

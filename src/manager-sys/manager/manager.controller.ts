@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from '../types/api.response';
 import { GridRequestDTO } from './dto/task-statistic.dto';
+import { Task } from 'test/test-grid';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('manager')
@@ -38,7 +39,7 @@ export class ManagerController {
         @Req() req: Request,
         @Res() res: Response,
     ) {
-        const result = this.statistic.getAllStatistic();
+        const result = this.statistic.getAllStatistic(Task.TaskType.CRON);
         const response: ApiResponse = {
             success: true,
             statusCode: 200,
@@ -55,6 +56,22 @@ export class ManagerController {
         @Query() query: GridRequestDTO,
     ) {
         const result = await this.statistic.getGrid(query);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: `그리드 전체 데이터 조회 성공`,
+            data: result,
+        }
+        res.status(200).json(response);
+    }
+
+    // for test
+    @Get('/test')
+    getState(
+        @Req() req: Request,
+        @Res() res: Response,
+    ){
+        const result = this.statistic.getAllStatistic();
         const response: ApiResponse = {
             success: true,
             statusCode: 200,
