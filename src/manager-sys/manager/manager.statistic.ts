@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import { GridRequestDTO, GridResultDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { LoggerService } from "../logger/logger.service";
@@ -14,24 +14,28 @@ const maxStatisticNumber = 30;
 // 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.
 // Q. State로 갖고 있을 거면, 솔직히 파일 뒤적거릴 필요도 없음. 그냥 State에서 찾으면 됨.
 @Injectable()
-export class ManagerStatistic {
+export class ManagerStatistic implements OnModuleInit {
     private statisticState: Task.TaskStatisticState[] = [];
     private maxStatisticNumber: number;
 
     constructor(
         private readonly logger: LoggerService,
     ) {
-        this.initialization();
     }
 
-    private initialization() {
+    async onModuleInit() {
+        await this.asyncIntialization();
+    }
+
+    private async asyncIntialization(): Promise<void> {
+        // intialization할 때 최근 30치 통계 넣어줄까?
         this.maxStatisticNumber = maxStatisticNumber;
 
         TaskIdentity.forEach(taskId => this.statisticState.push(StateFactory.createTaskStatisticState(taskId)));
-
-        // intialization할 때 최근 30치 통계 넣어줄까?
+        await this.setInitialStatisticState();
 
         console.log('[System] ManagerStatistic initialized');
+
     }
 
     public async startTask(taskId: Task.ITaskIdentity, contextId: string){
@@ -223,13 +227,34 @@ export class ManagerStatistic {
             executionTime,
         }
     }
+
+    private async setInitialStatisticState() {
+        while(this.logger.getStatisticLogUsing){
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.logger.useStatisticLog();
+
+        const fileContent = fs.readFileSync('logs/log-statistic.json', { encoding: 'utf-8' });
+        const lines = fileContent.split(/\r?\n/).reverse();
+
+        for(const line of lines){
+            if(line){
+                try {
+                    const log = JSON.parse(line);
+                    this.findTask({ domain: log.domain, task: log.task, taskType: log.taskType})
+                } catch (error) {
+                }
+            }
+        }
+
+        this.logger.freeStatisticLog();
+    }
     
     private async readLogsFullFile(
         filePath: string,
         conditionCheck: (obj: any) => boolean,
         maxResults: number = 30,
     ): Promise<Task.StatisticLog[]> {
-        // 파일 전체 내용을 비동기적으로 읽기
         // const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
         while(this.logger.getStatisticLogUsing){
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -258,7 +283,7 @@ export class ManagerStatistic {
             }
         }
 
-        this.logger.freeStatisticLog();
+        
         return matchingLogs;
     }
 }
