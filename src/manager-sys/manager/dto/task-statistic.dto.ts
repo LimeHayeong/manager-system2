@@ -24,3 +24,5 @@ export interface LogQueryDTO {
     from?: number;
     to?: number;
 }
+
+{}
