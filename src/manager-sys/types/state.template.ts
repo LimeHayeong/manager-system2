@@ -49,10 +49,13 @@ export class StateFactory {
         return taskIds.map(taskId => ({
                 ...taskId,
                 grid: Array.from({ length: length }, () => ({
+                    start: 0,
+                    end: 0,
                     logCount: 0,
                     infoCount: 0,
                     warnCount: 0,
-                    errorCount: 0
+                    errorCount: 0,
+                    contextIds: [],
                 }))
         }))
     }

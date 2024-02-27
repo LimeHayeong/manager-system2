@@ -177,12 +177,11 @@ export class ManagerStatistic implements OnModuleInit {
 
         const restTime = nowTimestamp % blockSize;
         const firstStart = nowTimestamp - restTime;
-        const timeArray = []
-        for(let i = 0; i < blockNumber; i++){
-            timeArray.push({
-                start: firstStart - blockSize * i,
-                end: firstStart - blockSize * (i+1),
-            })
+        for(let i = 0; i < TaskIdentity.length; i++){
+            for(let j = 0; j < blockNumber; j++){
+                gridStates[i].grid[j].start = firstStart - blockSize * j;
+                gridStates[i].grid[j].end = firstStart - blockSize * (j+1);
+            }
         }
 
         logs.forEach(data => {
@@ -202,12 +201,12 @@ export class ManagerStatistic implements OnModuleInit {
             currentState.grid[idx].infoCount += data.data.infoCount;
             currentState.grid[idx].warnCount += data.data.warnCount;
             currentState.grid[idx].errorCount += data.data.errorCount;
+            currentState.grid[idx].contextIds.push(data.contextId);
         })
         
         this.logger.freeStatisticLog();
 
         return {
-            time: timeArray,
             grids: gridStates
         }
     }

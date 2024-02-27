@@ -10,7 +10,6 @@ export interface GridRequestDTO {
 }
 
 export interface GridResultDTO {
-    time: Task.StarttoEnd[]
     grids: Task.GRID[]
 }
 
