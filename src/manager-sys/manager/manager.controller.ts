@@ -7,7 +7,6 @@ import { Request, Response } from 'express';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from '../types/api.response';
 import { GridRequestDTO } from './dto/task-statistic.dto';
-import { Task } from 'test/test-grid';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('manager')
@@ -39,7 +38,8 @@ export class ManagerController {
         @Req() req: Request,
         @Res() res: Response,
     ) {
-        const result = this.statistic.getAllStatistic(Task.TaskType.CRON);
+        // const result = this.statistic.getAllStatistic(Task.TaskType.CRON);
+        const result = this.statistic.getAllStatistic();
         const response: ApiResponse = {
             success: true,
             statusCode: 200,

@@ -44,10 +44,7 @@ export class ManagerStatistic implements OnModuleInit {
             // 시작할 때 데이터 초기화.
             const currentTaskStatistic = this.statisticState[taskIdx]
             currentTaskStatistic.contextId = contextId;
-            currentTaskStatistic.data.logCount = 0;
-            currentTaskStatistic.data.infoCount = 0;
-            currentTaskStatistic.data.warnCount = 0;
-            currentTaskStatistic.data.errorCount = 0;
+            currentTaskStatistic.data = this.newData();
         }
     }
 
@@ -229,6 +226,15 @@ export class ManagerStatistic implements OnModuleInit {
             data,
             timestamp,
             executionTime,
+        }
+    }
+
+    private newData(): Task.taskStatistic {
+        return {
+            logCount: 0,
+            infoCount: 0,
+            warnCount: 0,
+            errorCount: 0
         }
     }
 
