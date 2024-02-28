@@ -13,6 +13,15 @@ GET http://{{URL}}:{{PORT}}/manager/linechart HTTP/1.1
 ### Histogram
 GET http://{{URL}}:{{PORT}}/manager/histogram?domain=ServiceA&task=processRT&taskType=CRON HTTP/1.1
 
+### QueryLog 1
+GET http://{{URL}}:{{PORT}}/manager/logs?contextId=ba8269b1-6f62-401e-863b-3b6cbe14e710&from=1709078219671&to=1709080916748 HTTP/1.1
+
+### QueryLog 2
+GET http://{{URL}}:{{PORT}}/manager/logs?from=1709078210000&to=1709080930000 HTTP/1.1
+
+### QueryLog 3
+GET http://{{URL}}:{{PORT}}/manager/logs?contextId=d85212b8-e5ce-40eb-80b3-35a1bf735853&from=1708400000000&to=1709000000000 HTTP/1.1
+
 ### TEST
 GET http://{{URL}}:{{PORT}}/manager/test HTTP/1.1
 

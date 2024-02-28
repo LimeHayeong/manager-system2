@@ -27,6 +27,7 @@ export namespace Task {
       timestamp: number; // toISOString
     }
 
+    // TODO: 이거 이런 Interface가 아니라 key-value로 하는 게 맞을 듯.
     export interface LogContextId {
       task?: string;
       work?: string

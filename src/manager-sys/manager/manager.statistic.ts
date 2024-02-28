@@ -1,6 +1,8 @@
 import * as fs from 'fs';
+import * as path from 'path';
+import * as readline from 'readline'
 
-import { GridRequestDTO, GridResultDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, GridResultDTO, LogQueryDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
@@ -103,39 +105,6 @@ export class ManagerStatistic implements OnModuleInit {
                 taskType,
                 recentStatistics: currentTaskStatistic.recentStatistics,
             }
-
-            // if(number && from && to){
-            //     return await this.readLogsFullFile(
-            //         logFilePath,
-            //         (log: Task.StatisticLog) => {
-            //             return (log.domain === domain
-            //                     && log.task === task
-            //                     && log.taskType === taskType
-            //                     && log.timestamp >= from
-            //                     && log.timestamp <= to)
-            //         },
-            //         number
-            //     );
-            // } else if(number){
-            //     return await this.readLogsFullFile(
-            //         logFilePath,
-            //         (log: Task.StatisticLog) => {
-            //             return (log.domain === domain
-            //                     && log.task === task
-            //                     && log.taskType === taskType)
-            //         },
-            //         number
-            //     );
-
-            // }
-            // return await this.readLogsFullFile(
-            //     logFilePath,
-            //     (log: Task.StatisticLog) => {
-            //         return (log.domain === domain
-            //                 && log.task === task
-            //                 && log.taskType === taskType)
-            //     },
-            // );
         }
     }
 
@@ -211,6 +180,28 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
+    public async queryLog(data: LogQueryDTO): Promise<Task.Log[]>{
+        // 1. from to에서 날짜를 추출한다.
+        const { from, to } = data
+        // console.log(new Date(+from), new Date(+to))
+        const dateList = this.createDateRangeList(new Date(+from), new Date(+to))
+        // console.log('dateList: ', dateList);
+
+        // 2. 해당 날짜 리스트에 대응하는 파일에서 로그를 읽음
+        let allLogs: Task.Log[] = [];
+        for (const dateStr of dateList) {
+            const filePath = path.join('logs', `log-${dateStr}.json`); // 파일 경로 구성
+            if (fs.existsSync(filePath)) {
+                // console.log('exists!')
+                const dayLogs = await this.readLogFile(filePath, this.createFilterFunction(data));
+                allLogs = allLogs.concat(dayLogs);
+            }
+            // console.log(allLogs);
+        }
+
+        return allLogs;
+    }
+
     private findTask(taskId: Task.ITaskIdentity): number{
         const idx = this.statisticState.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
         return idx;
@@ -235,6 +226,42 @@ export class ManagerStatistic implements OnModuleInit {
             warnCount: 0,
             errorCount: 0
         }
+    }
+
+    private createDateRangeList(startDate: Date, endDate: Date): string[] {
+        const dateList: string[] = [];
+        let currentDate = new Date(startDate.toISOString().split('T')[0]); // 시작 날짜의 "YYYY-MM-DD" 부분만 사용하여 날짜 객체 생성
+        const end = new Date(endDate.toISOString().split('T')[0]); // 종료 날짜의 "YYYY-MM-DD" 부분만 사용하여 날짜 객체 생성
+    
+        while (currentDate <= end) {
+            dateList.push(currentDate.toISOString().split('T')[0]);
+            // 현재 날짜에 1일 추가
+            currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+        }
+    
+        return dateList;
+    }
+
+    private createFilterFunction(data: LogQueryDTO){
+        const { domain, task, taskType, contextId, level, chain, from, to} = data;
+        return (log: Task.Log) => {
+            if (domain && log.domain !== domain) return false;
+            if (task && log.task !== task) return false;
+            if (taskType && log.taskType !== taskType) return false;
+            if (contextId && !this.contextIdMatches(contextId, log.contextId)) return false;
+            if (level && log.level !== level) return false;
+            if (chain && log.data.chain !== chain) return false;
+            if (from && log.timestamp < from) return false;
+            if (to && log.timestamp > to) return false;
+            return true;
+        }
+    }
+
+    private contextIdMatches(searchContextIds: string[], logContextId: Task.LogContextId): boolean {
+        // logContextId 객체 내의 task와 work 값이 searchContextIds 배열에 하나라도 존재하는지 확인
+        const { task, work } = logContextId;
+        // task 또는 work 값이 searchContextIds 배열에 포함되어 있는지 확인
+        return !!((task && searchContextIds.includes(task)) || (work && searchContextIds.includes(work)));
     }
 
     private async setInitialStatisticState() {
@@ -282,41 +309,107 @@ export class ManagerStatistic implements OnModuleInit {
         //     )
         // )
     }
+
+    // private async readLogFile2(
+    //     filePath: string,
+    //     conditionCheck: (obj: any) => boolean,
+    //     maxResults: number = 9999,
+    // ): Promise<Task.Log[]> {
+    //     const matchingLogs: Task.Log[] = [];
+    //     const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
     
-    private async readLogsFullFile(
+    //     let buffer = '';
+    //     let lines = [];
+    
+    //     const processLines = () => {
+    //         // 조건에 맞는 로그를 처리하는 로직
+    //         for (const line of lines) {
+    //             try {
+    //                 const log = JSON.parse(line);
+    //                 if (conditionCheck(log)) {
+    //                     matchingLogs.push(log);
+    //                     if (matchingLogs.length >= maxResults) {
+    //                         fileStream.close(); // 최대 결과에 도달하면 스트림 닫기
+    //                         return;
+    //                     }
+    //                 }
+    //             } catch (error) {
+    //                 console.error('Error parsing JSON from line:', error);
+    //             }
+    //         }
+    //         lines = []; // 처리가 완료된 후 lines 배열 초기화
+    //     };
+    
+    //     for await (const chunk of fileStream) {
+    //         buffer += chunk;
+    //         let pos;
+    //         while ((pos = buffer.indexOf('\n')) >= 0) { // 줄 바꿈 문자를 기준으로 줄 찾기
+    //             lines.push(buffer.substring(0, pos));
+    //             buffer = buffer.substring(pos + 1);
+    //             if (lines.length >= 100) { // 100줄 단위로 처리
+    //                 processLines();
+    //             }
+    //         }
+    //     }
+    
+    //     if (lines.length > 0 || buffer.length > 0) { // 남은 줄 처리
+    //         if (buffer.length > 0) lines.push(buffer);
+    //         processLines();
+    //     }
+    
+    //     return matchingLogs;
+    // }
+
+    private async readLogFile(
         filePath: string,
-        conditionCheck: (obj: any) => boolean,
-        maxResults: number = 30,
-    ): Promise<Task.StatisticLog[]> {
-        // const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
-        while(this.logger.getStatisticLogUsing()){
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.logger.useStatisticLog();
+        conditionCheck: (log: Task.Log) => boolean,
+        maxResults: number = 9999,
+    ): Promise<Task.Log[]> {
+        const matchingLogs: Task.Log[] = [];
+        let buffer = '';
+        let lines = [];
 
-        const fileContent = fs.readFileSync('logs/log-statistic.json', { encoding: 'utf-8' });
-        
-        // 파일 내용을 줄바꿈 기준으로 분할하여 배열 생성, 뒤에서부터 검색
-        const lines = fileContent.split(/\r?\n/).reverse();
-        
-        const matchingLogs: Task.StatisticLog[] = [];
-
-        // 각 줄을 순회하면서 JSON 파싱 및 조건 검사
-        for (const line of lines) {
-            if (line) { // 빈 줄이 아닌 경우에만 처리
+        const processLines = (lines: string[]) => {
+            for (const line of lines) {
                 try {
-                    const log = JSON.parse(line);
+                    const log: Task.Log = JSON.parse(line);
                     if (conditionCheck(log)) {
                         matchingLogs.push(log);
-                        if (matchingLogs.length === maxResults) break; // 최대 결과 개수에 도달하면 중단
+                        if (matchingLogs.length >= maxResults) {
+                            return; // 최대 결과에 도달하면 처리 중단
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing JSON from line:', error);
                 }
             }
+        };
+
+        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+
+        for await (const chunk of fileStream) {
+            buffer += chunk;
+            let pos;
+            while ((pos = buffer.indexOf('\n')) >= 0) {
+                lines.push(buffer.substring(0, pos));
+                buffer = buffer.substring(pos + 1);
+
+                if (lines.length >= 100) {
+                    processLines(lines);
+                    lines = [];
+                }
+            }
         }
 
-        
+        // 남은 줄 처리
+        if (buffer) {
+            lines.push(buffer); // 마지막 부분에 줄바꿈이 없는 경우 처리
+        }
+        if (lines.length > 0) {
+            processLines(lines);
+        }
+
         return matchingLogs;
     }
+
 }

@@ -17,9 +17,9 @@ export interface LogQueryDTO {
     domain?: string;
     task?: string;
     taskType?: Task.TaskType;
-    contextId?: Task.LogContextId;
+    contextId?: string[];
     level?: Task.LogLevel;
     chain?: string;
-    from?: number;
-    to?: number;
+    from: number;
+    to: number;
 }

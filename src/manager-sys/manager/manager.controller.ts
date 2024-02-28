@@ -6,7 +6,7 @@ import { ManagerStatistic } from './manager.statistic';
 import { Request, Response } from 'express';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from '../types/api.response';
-import { GridRequestDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, LogQueryDTO } from './dto/task-statistic.dto';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('manager')
@@ -60,6 +60,22 @@ export class ManagerController {
             success: true,
             statusCode: 200,
             message: `그리드 전체 데이터 조회 성공`,
+            data: result,
+        }
+        res.status(200).json(response);
+    }
+
+    @Get('/logs')
+    async getLogs(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: LogQueryDTO,
+    ) {
+        const result = await this.statistic.queryLog(query);
+        const response: ApiResponse = {
+            success: true,
+            statusCode: 200,
+            message: `로그 쿼리 성공`,
             data: result,
         }
         res.status(200).json(response);
