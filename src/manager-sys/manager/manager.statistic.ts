@@ -358,24 +358,48 @@ export class ManagerStatistic implements OnModuleInit {
     //     return matchingLogs;
     // }
 
-    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO> {
-        const { from, to, pageNumber = 6, pageSize = 1000 } = data;
+    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
+        const { from, to, pageNumber = 1, pageSize = 1000 } = data;
         const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
         let selectedLogs: Task.Log[] = [];
-        let totalProcessedLogs = 0; // 전체 처리된 로그의 수
-        const requiredStart = pageNumber * pageSize;
-        const requiredEnd = (pageNumber + 1) * pageSize;
+        
+        let currentOffset = pageNumber * pageSize;
+        let remainingLogs = pageSize; // 남은 로그 수
     
         for (const dateStr of dateList) {
-            if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 종료
+            // 조건 달성하면 바로 종료하는 건데, 전체가 몇 개인지 알려주려면 없어야 함.
+            // if (remainingLogs <= 0) break;
     
             const filePath = path.join('logs', `log-${dateStr}.json`);
             if (fs.existsSync(filePath)) {
-                const { positions, processedLogs } = await this.identifyLogPositions(filePath, this.createFilterFunction(data), requiredStart - totalProcessedLogs, requiredEnd - totalProcessedLogs);
-                console.log(positions.length)
-                totalProcessedLogs += processedLogs; // 총 처리된 로그 수 업데이트
-    
-                await this.readSelectedLogs(filePath, positions, selectedLogs, pageSize);
+                // identifyLogPositions에서는 전체 로그 위치를 반환하므로, 여기서는 파일별로 처리할 필요가 있음
+                const positions = await this.identifyLogPositions(filePath, this.createFilterFunction(data));
+                console.log(positions.length);
+                
+                // 조건에 맞는 로그가 충분히 많지 않을 경우 다음 파일로 넘어감
+                if (positions.length < currentOffset) {
+                    currentOffset -= positions.length; // 다음 파일에서 처리해야 할 오프셋 조정
+                    continue;
+                }
+                
+                // 현재 파일에서 처리할 로그 위치 계산
+                const selectedPositions = positions.slice(currentOffset, currentOffset + remainingLogs);
+                
+                const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+                const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+                
+                let lineNumber = 0;
+                for await (const line of rl) {
+                    if (selectedPositions.includes(lineNumber)) {
+                        const log = JSON.parse(line);
+                        selectedLogs.push(log);
+                        if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 루프 종료
+                    }
+                    lineNumber++;
+                }
+                
+                rl.close();
+                remainingLogs -= selectedLogs.length; // 남은 로그 수 업데이트
             }
         }
     
@@ -385,39 +409,18 @@ export class ManagerStatistic implements OnModuleInit {
         };
     }
     
-    private async readSelectedLogs(filePath: string, positions: number[], selectedLogs: Task.Log[], pageSize: number): Promise<void> {
-        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-        const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-        
-        let lineNumber = 0;
-        for await (const line of rl) {
-            if (positions.includes(lineNumber)) {
-                try {
-                    const log = JSON.parse(line);
-                    selectedLogs.push(log);
-                    if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 종료
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-            }
-            lineNumber++;
-        }
-    
-        rl.close();
-    }
-    
-    private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean, rangeStart: number, rangeEnd: number): Promise<{positions: number[], processedLogs: number}> {
+    private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean): Promise<number[]> {
         const positions: number[] = [];
         let lineNumber = 0;
         let accumulatedLines = '';
-        let processedLogs = 0;
     
-        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8', highWaterMark: 64 * 1024 });
+        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8', highWaterMark: 64 * 1024 }); // 64KB 크기로 설정
     
         for await (const chunk of fileStream) {
             accumulatedLines += chunk;
             let lineEndIndex = 0;
     
+            // 줄 바꿈 문자를 찾아서 처리
             while ((lineEndIndex = accumulatedLines.indexOf('\n')) !== -1) {
                 const line = accumulatedLines.slice(0, lineEndIndex);
                 accumulatedLines = accumulatedLines.slice(lineEndIndex + 1);
@@ -425,22 +428,30 @@ export class ManagerStatistic implements OnModuleInit {
                 try {
                     const log: Task.Log = JSON.parse(line);
                     if (conditionCheck(log)) {
-                        processedLogs++;
-                        if (processedLogs > rangeStart && processedLogs <= rangeEnd) {
-                            positions.push(lineNumber);
-                        }
+                        positions.push(lineNumber);
                     }
                 } catch (error) {
                     console.error('Error parsing JSON:', error);
                 }
-                lineNumber++;
-                if (processedLogs >= rangeEnd) break;
-            }
     
-            if (processedLogs >= rangeEnd) break;
+                lineNumber++;
+            }
         }
     
-        return { positions, processedLogs };
+        // 마지막 남은 부분 처리
+        if (accumulatedLines) {
+            try {
+                const log: Task.Log = JSON.parse(accumulatedLines);
+                if (conditionCheck(log)) {
+                    positions.push(lineNumber);
+                }
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        }
+    
+        return positions;
     }
+    
        
 }
