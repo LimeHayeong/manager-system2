@@ -22,6 +22,8 @@ export interface LogQueryDTO {
     chain?: string;
     from: number;
     to: number;
+    pageNumber: number;
+    pageSize: number;
 }
 
 export interface LogQueryResultDTO {

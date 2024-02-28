@@ -180,32 +180,6 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
-    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
-        // 1. from to에서 날짜를 추출한다.
-        const { from, to } = data
-        // console.log(new Date(+from), new Date(+to))
-        const dateList = this.createDateRangeList(new Date(+from), new Date(+to))
-        // console.log('dateList: ', dateList);
-
-        // 2. 해당 날짜 리스트에 대응하는 파일에서 로그를 읽음
-        let allLogs: Task.Log[] = [];
-        for (const dateStr of dateList) {
-            const filePath = path.join('logs', `log-${dateStr}.json`); // 파일 경로 구성
-            if (fs.existsSync(filePath)) {
-                // console.log('exists!')
-                const dayLogs = await this.readLogFile(filePath, this.createFilterFunction(data));
-                console.log(dayLogs.length)
-                allLogs = allLogs.concat(dayLogs);
-            }
-            // console.log(allLogs);
-        }
-
-        return {
-            logscount: allLogs.length,
-            logs: allLogs
-        }
-    }
-
     private findTask(taskId: Task.ITaskIdentity): number{
         const idx = this.statisticState.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
         return idx;
@@ -365,4 +339,108 @@ export class ManagerStatistic implements OnModuleInit {
 
         return matchingLogs;
     }
+
+    // private async readLogFileTest(
+    //     filePath: string,
+    //     conditionCheck: (log: Task.Log) => boolean,
+    // ): Promise<Task.Log[]> {
+    //     // First, identify positions of logs that match the condition
+    //     const positions = await this.identifyLogPositions(filePath, conditionCheck);
+      
+    //     const matchingLogs: Task.Log[] = [];
+      
+    //     // Read and parse logs based on identified positions
+    //     for (const position of positions) {
+    //       const logData = await this.readLogAtPosition(filePath, position.start, position.end);
+    //       matchingLogs.push(logData);
+    //     }
+      
+    //     return matchingLogs;
+    // }
+
+    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO> {
+        const { from, to, pageNumber = 6, pageSize = 1000 } = data;
+        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
+        let selectedLogs: Task.Log[] = [];
+        let totalProcessedLogs = 0; // 전체 처리된 로그의 수
+        const requiredStart = pageNumber * pageSize;
+        const requiredEnd = (pageNumber + 1) * pageSize;
+    
+        for (const dateStr of dateList) {
+            if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 종료
+    
+            const filePath = path.join('logs', `log-${dateStr}.json`);
+            if (fs.existsSync(filePath)) {
+                const { positions, processedLogs } = await this.identifyLogPositions(filePath, this.createFilterFunction(data), requiredStart - totalProcessedLogs, requiredEnd - totalProcessedLogs);
+                console.log(positions.length)
+                totalProcessedLogs += processedLogs; // 총 처리된 로그 수 업데이트
+    
+                await this.readSelectedLogs(filePath, positions, selectedLogs, pageSize);
+            }
+        }
+    
+        return {
+            logscount: selectedLogs.length,
+            logs: selectedLogs
+        };
+    }
+    
+    private async readSelectedLogs(filePath: string, positions: number[], selectedLogs: Task.Log[], pageSize: number): Promise<void> {
+        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+        const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+        
+        let lineNumber = 0;
+        for await (const line of rl) {
+            if (positions.includes(lineNumber)) {
+                try {
+                    const log = JSON.parse(line);
+                    selectedLogs.push(log);
+                    if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 종료
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                }
+            }
+            lineNumber++;
+        }
+    
+        rl.close();
+    }
+    
+    private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean, rangeStart: number, rangeEnd: number): Promise<{positions: number[], processedLogs: number}> {
+        const positions: number[] = [];
+        let lineNumber = 0;
+        let accumulatedLines = '';
+        let processedLogs = 0;
+    
+        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8', highWaterMark: 64 * 1024 });
+    
+        for await (const chunk of fileStream) {
+            accumulatedLines += chunk;
+            let lineEndIndex = 0;
+    
+            while ((lineEndIndex = accumulatedLines.indexOf('\n')) !== -1) {
+                const line = accumulatedLines.slice(0, lineEndIndex);
+                accumulatedLines = accumulatedLines.slice(lineEndIndex + 1);
+    
+                try {
+                    const log: Task.Log = JSON.parse(line);
+                    if (conditionCheck(log)) {
+                        processedLogs++;
+                        if (processedLogs > rangeStart && processedLogs <= rangeEnd) {
+                            positions.push(lineNumber);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                }
+                lineNumber++;
+                if (processedLogs >= rangeEnd) break;
+            }
+    
+            if (processedLogs >= rangeEnd) break;
+        }
+    
+        return { positions, processedLogs };
+    }
+       
 }
