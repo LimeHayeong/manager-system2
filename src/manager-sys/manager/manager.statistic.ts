@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline'
 
-import { GridRequestDTO, GridResultDTO, LogQueryDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
@@ -180,7 +180,7 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
-    public async queryLog(data: LogQueryDTO): Promise<Task.Log[]>{
+    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
         // 1. from to에서 날짜를 추출한다.
         const { from, to } = data
         // console.log(new Date(+from), new Date(+to))
@@ -194,12 +194,16 @@ export class ManagerStatistic implements OnModuleInit {
             if (fs.existsSync(filePath)) {
                 // console.log('exists!')
                 const dayLogs = await this.readLogFile(filePath, this.createFilterFunction(data));
+                console.log(dayLogs.length)
                 allLogs = allLogs.concat(dayLogs);
             }
             // console.log(allLogs);
         }
 
-        return allLogs;
+        return {
+            logscount: allLogs.length,
+            logs: allLogs
+        }
     }
 
     private findTask(taskId: Task.ITaskIdentity): number{
@@ -310,60 +314,10 @@ export class ManagerStatistic implements OnModuleInit {
         // )
     }
 
-    // private async readLogFile2(
-    //     filePath: string,
-    //     conditionCheck: (obj: any) => boolean,
-    //     maxResults: number = 9999,
-    // ): Promise<Task.Log[]> {
-    //     const matchingLogs: Task.Log[] = [];
-    //     const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-    
-    //     let buffer = '';
-    //     let lines = [];
-    
-    //     const processLines = () => {
-    //         // 조건에 맞는 로그를 처리하는 로직
-    //         for (const line of lines) {
-    //             try {
-    //                 const log = JSON.parse(line);
-    //                 if (conditionCheck(log)) {
-    //                     matchingLogs.push(log);
-    //                     if (matchingLogs.length >= maxResults) {
-    //                         fileStream.close(); // 최대 결과에 도달하면 스트림 닫기
-    //                         return;
-    //                     }
-    //                 }
-    //             } catch (error) {
-    //                 console.error('Error parsing JSON from line:', error);
-    //             }
-    //         }
-    //         lines = []; // 처리가 완료된 후 lines 배열 초기화
-    //     };
-    
-    //     for await (const chunk of fileStream) {
-    //         buffer += chunk;
-    //         let pos;
-    //         while ((pos = buffer.indexOf('\n')) >= 0) { // 줄 바꿈 문자를 기준으로 줄 찾기
-    //             lines.push(buffer.substring(0, pos));
-    //             buffer = buffer.substring(pos + 1);
-    //             if (lines.length >= 100) { // 100줄 단위로 처리
-    //                 processLines();
-    //             }
-    //         }
-    //     }
-    
-    //     if (lines.length > 0 || buffer.length > 0) { // 남은 줄 처리
-    //         if (buffer.length > 0) lines.push(buffer);
-    //         processLines();
-    //     }
-    
-    //     return matchingLogs;
-    // }
-
     private async readLogFile(
         filePath: string,
         conditionCheck: (log: Task.Log) => boolean,
-        maxResults: number = 9999,
+        // maxResults: number = 9999,
     ): Promise<Task.Log[]> {
         const matchingLogs: Task.Log[] = [];
         let buffer = '';
@@ -375,9 +329,9 @@ export class ManagerStatistic implements OnModuleInit {
                     const log: Task.Log = JSON.parse(line);
                     if (conditionCheck(log)) {
                         matchingLogs.push(log);
-                        if (matchingLogs.length >= maxResults) {
-                            return; // 최대 결과에 도달하면 처리 중단
-                        }
+                        // if (matchingLogs.length >= maxResults) {
+                        //     return; // 최대 결과에 도달하면 처리 중단
+                        // }
                     }
                 } catch (error) {
                     console.error('Error parsing JSON from line:', error);
@@ -411,5 +365,4 @@ export class ManagerStatistic implements OnModuleInit {
 
         return matchingLogs;
     }
-
 }

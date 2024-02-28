@@ -23,3 +23,8 @@ export interface LogQueryDTO {
     from: number;
     to: number;
 }
+
+export interface LogQueryResultDTO {
+    logscount: number;
+    logs: Task.Log[];
+}
