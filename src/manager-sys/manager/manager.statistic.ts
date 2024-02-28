@@ -359,7 +359,19 @@ export class ManagerStatistic implements OnModuleInit {
     // }
 
     public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
-        const { from, to, pageNumber = 1, pageSize = 1000 } = data;
+        let { from, to, pageNumber = 0, pageSize = 1000 } = data;
+        // from to 없으면 만들어줘야 되는데.
+        // from과 to 값이 없으면 기본값 설정
+        if (!from || !to) {
+            const todayTimestamp = new Date().getTime(); // 오늘 날짜의 Unix timestamp
+            const sevenDaysAgoTimestamp = new Date().getTime() - (7 * 24 * 60 * 60 * 1000); // 7일 전의 Unix timestamp
+    
+            from = from || sevenDaysAgoTimestamp;
+            to = to || todayTimestamp;
+        }
+
+        console.log(from, to);
+
         const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
         let selectedLogs: Task.Log[] = [];
         

@@ -71,7 +71,7 @@ export class ManagerController {
         @Res() res: Response,
         @Query() query: LogQueryDTO,
     ) {
-        // console.log(query)
+        console.log(query)
         const result = await this.statistic.queryLog(query);
         const response: ApiResponse = {
             success: true,

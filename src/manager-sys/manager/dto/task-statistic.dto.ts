@@ -20,10 +20,10 @@ export interface LogQueryDTO {
     contextId?: string[];
     level?: Task.LogLevel;
     chain?: string;
-    from: number;
-    to: number;
-    pageNumber: number;
-    pageSize: number;
+    from?: number;
+    to?: number;
+    pageNumber?: number;
+    pageSize?: number;
 }
 
 export interface LogQueryResultDTO {
