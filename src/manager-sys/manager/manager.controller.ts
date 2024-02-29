@@ -97,4 +97,16 @@ export class ManagerController {
         }
         res.status(200).json(response);
     }
+
+    // for test
+    @Get('/patternmatching')
+    test(){
+        this.statistic.pattern();
+    }
+
+    // for testing
+    @Get('/setfiles')
+    test2() {
+        this.statistic.setfiles();
+    }
 }

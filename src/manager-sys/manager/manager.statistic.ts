@@ -220,28 +220,6 @@ export class ManagerStatistic implements OnModuleInit {
         return dateList;
     }
 
-    private createFilterFunction(data: LogQueryDTO){
-        const { domain, task, taskType, contextId, level, chain, from, to} = data;
-        return (log: Task.Log) => {
-            if (domain && log.domain !== domain) return false;
-            if (task && log.task !== task) return false;
-            if (taskType && log.taskType !== taskType) return false;
-            if (contextId && !this.contextIdMatches(contextId, log.contextId)) return false;
-            if (level && log.level !== level) return false;
-            if (chain && log.data.chain !== chain) return false;
-            if (from && log.timestamp < from) return false;
-            if (to && log.timestamp > to) return false;
-            return true;
-        }
-    }
-
-    private contextIdMatches(searchContextIds: string[], logContextId: Task.LogContextId): boolean {
-        // logContextId 객체 내의 task와 work 값이 searchContextIds 배열에 하나라도 존재하는지 확인
-        const { task, work } = logContextId;
-        // task 또는 work 값이 searchContextIds 배열에 포함되어 있는지 확인
-        return !!((task && searchContextIds.includes(task)) || (work && searchContextIds.includes(work)));
-    }
-
     private async setInitialStatisticState() {
         while(this.logger.getStatisticLogUsing()){
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -359,6 +337,7 @@ export class ManagerStatistic implements OnModuleInit {
     // }
 
     public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
+        console.time('queryLogs');
         let { from, to, pageNumber = 0, pageSize = 1000 } = data;
         // from to 없으면 만들어줘야 되는데.
         // from과 to 값이 없으면 기본값 설정
@@ -386,7 +365,7 @@ export class ManagerStatistic implements OnModuleInit {
             if (fs.existsSync(filePath)) {
                 // identifyLogPositions에서는 전체 로그 위치를 반환하므로, 여기서는 파일별로 처리할 필요가 있음
                 const positions = await this.identifyLogPositions(filePath, this.createFilterFunction(data));
-                console.log(positions.length);
+                // console.log(positions.length);
                 
                 // 조건에 맞는 로그가 충분히 많지 않을 경우 다음 파일로 넘어감
                 if (positions.length < currentOffset) {
@@ -415,13 +394,37 @@ export class ManagerStatistic implements OnModuleInit {
             }
         }
     
+        console.timeEnd('queryLogs');
         return {
             logscount: selectedLogs.length,
             logs: selectedLogs
         };
     }
+
+    private createFilterFunction(data: LogQueryDTO){
+        const { domain, task, taskType, contextId, level, chain, from, to} = data;
+        return (log: Task.Log) => {
+            if (domain && log.domain !== domain) return false;
+            if (task && log.task !== task) return false;
+            if (taskType && log.taskType !== taskType) return false;
+            if (contextId && !this.contextIdMatches(contextId, log.contextId)) return false;
+            if (level && log.level !== level) return false;
+            if (chain && log.data.chain !== chain) return false;
+            if (from && log.timestamp < from) return false;
+            if (to && log.timestamp > to) return false;
+            return true;
+        }
+    }
+
+    private contextIdMatches(searchContextIds: string[], logContextId: Task.LogContextId): boolean {
+        // logContextId 객체 내의 task와 work 값이 searchContextIds 배열에 하나라도 존재하는지 확인
+        const { task, work } = logContextId;
+        // task 또는 work 값이 searchContextIds 배열에 포함되어 있는지 확인
+        return !!((task && searchContextIds.includes(task)) || (work && searchContextIds.includes(work)));
+    }
     
     private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean): Promise<number[]> {
+        debugger;
         const positions: number[] = [];
         let lineNumber = 0;
         let accumulatedLines = '';
@@ -436,6 +439,7 @@ export class ManagerStatistic implements OnModuleInit {
             while ((lineEndIndex = accumulatedLines.indexOf('\n')) !== -1) {
                 const line = accumulatedLines.slice(0, lineEndIndex);
                 accumulatedLines = accumulatedLines.slice(lineEndIndex + 1);
+                debugger;
     
                 try {
                     const log: Task.Log = JSON.parse(line);
@@ -453,8 +457,10 @@ export class ManagerStatistic implements OnModuleInit {
         // 마지막 남은 부분 처리
         if (accumulatedLines) {
             try {
+                debugger;
                 const log: Task.Log = JSON.parse(accumulatedLines);
                 if (conditionCheck(log)) {
+                    debugger;
                     positions.push(lineNumber);
                 }
             } catch (error) {
@@ -465,5 +471,148 @@ export class ManagerStatistic implements OnModuleInit {
         return positions;
     }
     
-       
+    public async patternRaw() {
+        console.time('patternmatching');
+        let from;
+        let to;
+        let pageNumber = 0;
+        let pageSize = 1000;
+        // from to 없으면 만들어줘야 되는데.
+        // from과 to 값이 없으면 기본값 설정
+        if (!from || !to) {
+            const todayTimestamp = new Date().getTime(); // 오늘 날짜의 Unix timestamp
+            const sevenDaysAgoTimestamp = new Date().getTime() - (7 * 24 * 60 * 60 * 1000); // 7일 전의 Unix timestamp
+    
+            from = from || sevenDaysAgoTimestamp;
+            to = to || todayTimestamp;
+        }
+
+        console.log(from, to);
+
+        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
+        let selectedLogs: Task.Log[] = [];
+        
+        let currentOffset = pageNumber * pageSize;
+        let remainingLogs = pageSize; // 남은 로그 수
+
+        for (const dateStr of dateList) {
+            const filePath = path.join('logs', `log-${dateStr}.json`);
+            if (fs.existsSync(filePath)) {
+                const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
+
+
+                const pattern = new RegExp(this.createPatternFromQueryData({}), 'g');
+                const matches = fileContent.matchAll(pattern);
+
+                for (const match of matches) {
+                    console.log(match);
+
+                }
+            }
+        }
+
+        console.timeEnd('patternmatching');
+        return {
+            logscount: selectedLogs.length,
+            logs: selectedLogs
+        };
+    }
+
+    public async pattern() {
+        console.time('patternmatching');
+
+        let from;
+        let to;
+        let pageNumber = 0;
+        let pageSize = 9999999999;
+        // from과 to 값이 없으면 기본값 설정
+        if (!from || !to) {
+            const todayTimestamp = new Date().getTime();
+            const sevenDaysAgoTimestamp = todayTimestamp - (7 * 24 * 60 * 60 * 1000);
+            from = from || sevenDaysAgoTimestamp;
+            to = to || todayTimestamp;
+        }
+    
+        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
+        let selectedLogs = [];
+    
+        for (const dateStr of dateList) {
+            console.log(dateStr);
+            const filePath = path.join('logs', `log-${dateStr}.json`);
+            if (fs.existsSync(filePath)) {
+                const pattern = new RegExp(this.createPatternFromQueryData({}), 'g');
+                const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+                const rl = readline.createInterface({
+                    input: fileStream,
+                    crlfDelay: Infinity
+                });
+    
+                for await (const line of rl) {
+                    if (pattern.test(line)) {
+                        // console.log('true');
+                        selectedLogs.push(line); // 현재 줄이 패턴과 일치하는 경우, 배열에 추가
+                        if (selectedLogs.length >= pageSize) break;
+                    }
+                }
+            }
+    
+            if (selectedLogs.length >= pageSize) break;
+        }
+        console.log(selectedLogs);
+    
+        console.timeEnd('patternmatching');
+        return {
+            logscount: selectedLogs.length,
+            logs: selectedLogs
+        };
+    }
+
+    private createPatternFromQueryData(data: LogQueryDTO): string {
+        // 여기서 data를 기반으로 필요한 정규 표현식 패턴을 생성합니다.
+        // 이는 예시로, 실제 패턴은 조건에 맞게 생성해야 합니다.
+        // return '"chain":"Chain_37"'; // 모든 문자에 일치, 실제 조건에 맞는 정규 표현식 필요
+        //return "a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
+        return "d85212b8-e5ce-40eb-80b3-35a1bf735853|f78647e7-8712-4ab2-a426-8d5d0d14807e|c069a9db-227f-49e9-834c-38a1284ffde3|a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
+    }
+    
+    public async setfiles(logFiles?: string[]): Promise<void> {
+        logFiles = [
+            'log-2024-02-21.json',
+            'log-2024-02-22.json',
+            'log-2024-02-23.json',
+            'log-2024-02-26.json',
+            'log-2024-02-27.json',
+            'log-2024-02-28.json',
+            'log-2024-02-29.json'
+        ]
+
+        for (const logFile of logFiles) {
+            const filePath = path.join('logs', logFile);
+            const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
+            const logs = fileContent.split('\n').filter(line => line.trim()).map(line => JSON.parse(line) as LogEntry);
+    
+            const logsByHour: { [key: string]: LogEntry[] } = {};
+    
+            for (const log of logs) {
+                const date = new Date(log.timestamp);
+                const dateHourKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}`;
+                
+                if (!logsByHour[dateHourKey]) {
+                    logsByHour[dateHourKey] = [];
+                }
+    
+                logsByHour[dateHourKey].push(log);
+            }
+    
+            for (const [dateHourKey, logs] of Object.entries(logsByHour)) {
+                const outputFilePath = path.join('logs2', `log-${dateHourKey}.json`);
+                await fs.promises.writeFile(outputFilePath, logs.map(log => JSON.stringify(log)).join('\n'), { encoding: 'utf-8' });
+            }
+        }
+    }
+}
+
+interface LogEntry {
+    timestamp: number;
+    [key: string]: any;
 }

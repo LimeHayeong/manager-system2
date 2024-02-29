@@ -28,8 +28,17 @@ GET http://{{URL}}:{{PORT}}/manager/logs?domain=ServiceA&task=processRT&taskId=C
 ### QueryLog 5
 GET http://{{URL}}:{{PORT}}/manager/logs?contextId=d85212b8-e5ce-40eb-80b3-35a1bf735853&contextId=f78647e7-8712-4ab2-a426-8d5d0d14807e&contextId=c069a9db-227f-49e9-834c-38a1284ffde3&contextId=a4cb186b-aaa1-4cfd-bebf-e346f3cf1656&from=1708400000000&to=1710000000000
 
+### QueryLog 6
+GET http://{{URL}}:{{PORT}}/manager/logs?domain=ServiceA&task=processRT&taskType=CRON&from=1709114400000&to=1709118000000 HTTP/1.1
+
 ### TEST
 GET http://{{URL}}:{{PORT}}/manager/test HTTP/1.1
+
+### TEST2
+GET http://{{URL}}:{{PORT}}/manager/patternmatching HTTP/1.1
+
+### TEST3
+GET http://{{URL}}:{{PORT}}/manager/setfiles HTTP/1.1
 
 ### Sample work trigger.
 POST http://{{URL}}:{{PORT}}/sampleWork/start HTTP/1.1
