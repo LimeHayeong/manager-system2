@@ -6,7 +6,7 @@ import { ManagerStatistic } from './manager.statistic';
 import { Request, Response } from 'express';
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 import { ApiResponse } from '../types/api.response';
-import { GridRequestDTO, LogQueryDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, LogQueryDTO, LogQueryResultDTO } from './dto/task-statistic.dto';
 
 @UseFilters(HttpExceptionFilter)
 @Controller('manager')
@@ -72,7 +72,7 @@ export class ManagerController {
         @Query() query: LogQueryDTO,
     ) {
         console.log(query)
-        const result = await this.statistic.queryLog(query);
+        const result: LogQueryResultDTO = await this.statistic.doPattern(query);
         const response: ApiResponse = {
             success: true,
             statusCode: 200,
@@ -97,23 +97,6 @@ export class ManagerController {
         }
         res.status(200).json(response);
     }
-
-    // for test
-    @Get('/patternmatching')
-    async test(@Req() req: Request,
-    @Res() res: Response,
-    @Query() query: LogQueryDTO,
-    ) {
-    console.log(query)
-    const result = await this.statistic.doPattern(query);
-    const response: ApiResponse = {
-        success: true,
-        statusCode: 200,
-        message: `로그 쿼리 성공`,
-        data: null
-    }
-    res.status(200).json(response);
-}
 
     // for testing
     @Get('/setfiles')

@@ -99,6 +99,23 @@ export namespace Helper {
         return descriptor;
     }
 
+    export function ExecutionTimer(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = async function(...args: any[]) {
+            console.time(propertyName);
+            try {
+                const result = await originalMethod.apply(this, args);
+                return result;
+            } catch(e) {
+                console.error('task helper catch: ' + e.stack);
+                throw e;
+            } finally {
+                console.timeEnd(propertyName)
+            }
+        }
+        return descriptor;
+    }
+
     // export function LogError(target: any, propertyName: string, descriptor: TypedPropertyDescriptor<Function>) {
     //     const method = descriptor.value; // 원래의 메서드
     

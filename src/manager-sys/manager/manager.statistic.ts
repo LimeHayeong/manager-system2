@@ -2,10 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline'
 
-import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, TaskHistogramDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
+import { Helper } from '../util/helper';
 import { LoggerService } from "../logger/logger.service";
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
@@ -19,7 +20,7 @@ const maxStatisticNumber = 30;
 export class ManagerStatistic implements OnModuleInit {
     private statisticState: Task.TaskStatisticState[] = [];
     private maxStatisticNumber: number;
-    private pageSize: 100;
+    private pageSize: number = 100;
 
     constructor(
         private readonly logger: LoggerService,
@@ -319,217 +320,186 @@ export class ManagerStatistic implements OnModuleInit {
         return matchingLogs;
     }
 
-    // private async readLogFileTest(
-    //     filePath: string,
-    //     conditionCheck: (log: Task.Log) => boolean,
-    // ): Promise<Task.Log[]> {
-    //     // First, identify positions of logs that match the condition
-    //     const positions = await this.identifyLogPositions(filePath, conditionCheck);
-      
-    //     const matchingLogs: Task.Log[] = [];
-      
-    //     // Read and parse logs based on identified positions
-    //     for (const position of positions) {
-    //       const logData = await this.readLogAtPosition(filePath, position.start, position.end);
-    //       matchingLogs.push(logData);
-    //     }
-      
-    //     return matchingLogs;
-    // }
+    @Helper.ExecutionTimer
+    public async doPattern(query: LogQueryDTO): Promise<LogQueryResultDTO> {
+        // contextId들 줬으면 from, to 특정 짓는 로직 추가.
 
-    public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
-        console.time('queryLogs');
-        let { from, to, pageNumber = 0, pageSize = 999999} = data;
-        // from to 없으면 만들어줘야 되는데.
-        // from과 to 값이 없으면 기본값 설정
-        if (!from || !to) {
-            const todayTimestamp = new Date().getTime(); // 오늘 날짜의 Unix timestamp
-            const sevenDaysAgoTimestamp = new Date().getTime() - (7 * 24 * 60 * 60 * 1000); // 7일 전의 Unix timestamp
-    
-            from = from || sevenDaysAgoTimestamp;
-            to = to || todayTimestamp;
-        }
+        const { from, to, initial } = query
+        if(initial) {
+            const { startDate, endDate } = this.setDateRange(+from, +to)
+            const dateList = this.createDateHourRangeList(startDate, endDate);
+            // console.log(dateList);
+            let selectedLogs = [];
+            let totalSelectedLogs = 0; // 총 선택된 로그의 수
 
-        console.log(from, to);
-
-        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
-        let selectedLogs: Task.Log[] = [];
+            const pageInfo: PageInfo[] = [];
+            let currentPageNumber = 0;
+            let currentPageLineNumber = 0;
+            let currentPageInfo: PageInfo;
         
-        let currentOffset = pageNumber * pageSize;
-        let remainingLogs = pageSize; // 남은 로그 수
-    
-        let length;
-        for (const dateStr of dateList) {
-            // 조건 달성하면 바로 종료하는 건데, 전체가 몇 개인지 알려주려면 없어야 함.
-            // if (remainingLogs <= 0) break;
-            length = 0;
+            const pattern = new RegExp(this.createPatternFromQueryData(query));
+            for(const dateStr of dateList){
+                let length = 0;
+        
+                const filePath = path.join('logs2', `log-${dateStr}.json`);
+                if (fs.existsSync(filePath)) {
+                    const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+                    const rl = readline.createInterface({
+                        input: fileStream,
+                        crlfDelay: Infinity
+                    });
+        
+                    let lineNumber = 0;
+                    for await (const line of rl) {
+                        if (pattern.test(line)) {
+                            selectedLogs.push(line);
+                            length++;
+                            totalSelectedLogs++;
+
+                            if(currentPageNumber === 0){
+                                // 첫 페이지 시작
+                                currentPageInfo = {
+                                    pageNumber: currentPageNumber++,
+                                    date: dateStr,
+                                    startLine: lineNumber
+                                }
+                            }
+                            currentPageLineNumber++;
+
+                            if(currentPageLineNumber === this.pageSize){
+                                pageInfo.push(currentPageInfo);
+                                currentPageLineNumber = 0;
+                                currentPageInfo = {
+                                    pageNumber: currentPageNumber++,
+                                    date: dateStr,
+                                    startLine: lineNumber+1
+                                }
+                            }
+
+                        }
+                        lineNumber++;
+                    }
+        
+                    rl.close();
+                }
+        
+                // console.log(`${dateStr}: ${length} logs selected`);
+            }
+            if(currentPageLineNumber > 0){
+                pageInfo.push(currentPageInfo)
+            }
+                
+            console.log(`Total logs selected: ${selectedLogs.length}`);
+            return {
+                query: {},
+                meta: {
+                    totalLogs: selectedLogs.length,
+                    pageInfos: pageInfo,
+                },
+                logs: [],
+            };
+
             
-            const filePath = path.join('logs', `log-${dateStr}.json`);
-            if (fs.existsSync(filePath)) {
-                // identifyLogPositions에서는 전체 로그 위치를 반환하므로, 여기서는 파일별로 처리할 필요가 있음
-                const positions = await this.identifyLogPositions(filePath, this.createFilterFunction(data));
-                // console.log(positions.length);
-                
-                // 조건에 맞는 로그가 충분히 많지 않을 경우 다음 파일로 넘어감
-                if (positions.length < currentOffset) {
-                    currentOffset -= positions.length; // 다음 파일에서 처리해야 할 오프셋 조정
-                    console.log('offsets:', currentOffset);
-                    continue;
-                }
-                
-                // 현재 파일에서 처리할 로그 위치 계산
-                const selectedPositions = positions.slice(currentOffset, currentOffset + remainingLogs);
-                
-                const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-                const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
-                
-                let lineNumber = 0;
-                for await (const line of rl) {
-                    if (selectedPositions.includes(lineNumber)) {
-                        const log = JSON.parse(line);
-                        selectedLogs.push(log);
-                        length++;
-                        if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 루프 종료
+        } else {
+            // 처음 아니고 query에 조건 다 주어지면
+            const { pageDate, pageStartLine } = query;
+
+            let selectedLogs = [];
+
+            const pattern = new RegExp(this.createPatternFromQueryData(query))
+            let newPageDate = pageDate;
+            while(selectedLogs.length < this.pageSize){
+                const filePath = path.join('logs2', `log-${newPageDate}.json`);
+                if(fs.existsSync(filePath)){
+                    const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+                    const rl = readline.createInterface({
+                        input: fileStream,
+                        crlfDelay: Infinity
+                    });
+
+                    let lineNumber = 0;
+                    for await(const line of rl){
+                        lineNumber++;
+                        if(lineNumber >= pageStartLine && pattern.test(line)){
+                            selectedLogs.push(JSON.parse(line));
+                            if(selectedLogs.length === this.pageSize) break;
+                        }
                     }
-                    lineNumber++;
+                    rl.close();
                 }
-                
-                rl.close();
-                remainingLogs -= length; // 남은 로그 수 업데이트
+                newPageDate = this.incerementHourlyTimestamp(newPageDate)
             }
-            console.log(dateStr, length);
-        }
-        console.log(selectedLogs.length)
 
-        console.timeEnd('queryLogs');
-        return {
-            logscount: selectedLogs.length,
-            logs: selectedLogs
-        };
-    }
-
-    private createFilterFunction(data: LogQueryDTO){
-        const { domain, task, taskType, contextId, level, chain, from, to} = data;
-        return (log: Task.Log) => {
-            if (domain && log.domain !== domain) return false;
-            if (task && log.task !== task) return false;
-            if (taskType && log.taskType !== taskType) return false;
-            if (contextId && !this.contextIdMatches(contextId, log.contextId)) return false;
-            if (level && log.level !== level) return false;
-            if (chain && log.data.chain !== chain) return false;
-            if (from && log.timestamp < from) return false;
-            if (to && log.timestamp > to) return false;
-            return true;
-        }
-    }
-
-    private contextIdMatches(searchContextIds: string[], logContextId: Task.LogContextId): boolean {
-        // logContextId 객체 내의 task와 work 값이 searchContextIds 배열에 하나라도 존재하는지 확인
-        const { task, work } = logContextId;
-        // task 또는 work 값이 searchContextIds 배열에 포함되어 있는지 확인
-        return !!((task && searchContextIds.includes(task)) || (work && searchContextIds.includes(work)));
-    }
-    
-    private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean): Promise<number[]> {
-        const positions: number[] = [];
-        let lineNumber = 0;
-        let accumulatedLines = '';
-    
-        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8', highWaterMark: 64 * 1024 }); // 64KB 크기로 설정
-    
-        for await (const chunk of fileStream) {
-            accumulatedLines += chunk;
-            let lineEndIndex = 0;
-    
-            // 줄 바꿈 문자를 찾아서 처리
-            while ((lineEndIndex = accumulatedLines.indexOf('\n')) !== -1) {
-                const line = accumulatedLines.slice(0, lineEndIndex);
-                accumulatedLines = accumulatedLines.slice(lineEndIndex + 1);
-    
-                try {
-                    const log: Task.Log = JSON.parse(line);
-                    if (conditionCheck(log)) {
-                        positions.push(lineNumber);
-                    }
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-    
-                lineNumber++;
+            return {
+                query: query,
+                meta: {
+                    initial: false,
+                    currentPage: query.pageNumber,
+                    pageSize: this.pageSize
+                },
+                logs: selectedLogs
             }
         }
-    
-        // 마지막 남은 부분 처리
-        if (accumulatedLines) {
-            try {
-                const log: Task.Log = JSON.parse(accumulatedLines);
-                if (conditionCheck(log)) {
-                    positions.push(lineNumber);
-                }
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
-            }
-        }
-    
-        return positions;
     }
 
-    public async doPattern(query: LogQueryDTO) {
-        console.time('patternmatching');
-    
-        let pageNumber = 0;
-        const pageSize = 999999; // 페이지 크기를 100으로 설정
+    private incerementHourlyTimestamp(timestamp: string) {
+        // Parse the timestamp into date and hour parts
+        const parts = timestamp.split("-");
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+        const day = parseInt(parts[2], 10);
+        const hour = parseInt(parts[3], 10);
 
-        const { from, to} = query;
-        const { startDate, endDate } = this.setDateRange(from, to)
-        const dateList = this.createDateHourRangeList(startDate, endDate);
+        // Create a Date object
+        const date = new Date(year, month, day, hour);
+
+        // Increment by one hour
+        date.setHours(date.getHours() + 1);
+
+        // Format and return the incremented timestamp
+        const incrementedTimestamp = date.getFullYear() + "-"
+            + String(date.getMonth() + 1).padStart(2, '0') + "-" // Adjust month back to 1-indexed
+            + String(date.getDate()).padStart(2, '0') + "-"
+            + String(date.getHours()).padStart(2, '0');
+
+        return incrementedTimestamp;
+    }
+
+    public async doPatternWithPagination(query: any) {
+        const { pageNumber, pageInfos } = query
+
         let selectedLogs = [];
-        let totalSelectedLogs = 0; // 총 선택된 로그의 수
-    
-        const testQuery1 = {
-            domain: "ServiceA",
-            task: "processRT",
-            taskType: Task.TaskType.CRON
-        };
-    
+        const dateList: string[] = [];
+        dateList.push(pageInfos[pageNumber-1].date)
+        if(pageInfos[pageNumber-1].date !== pageInfos[pageNumber].date)
+            dateList.push(pageInfos[pageNumber].date)
+        
+        const pattern = new RegExp(this.createPatternFromQueryData(query));
         for(const dateStr of dateList){
-            let length = 0;
-    
-            if (!dateStr) break; // 날짜 리스트의 끝에 도달하면 반복 종료
-    
+            let length = 0
+
             const filePath = path.join('logs2', `log-${dateStr}.json`);
-            if (fs.existsSync(filePath)) {
-                const pattern = new RegExp(this.createPatternFromQueryData(testQuery1));
-                const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-                const rl = readline.createInterface({
-                    input: fileStream,
-                    crlfDelay: Infinity
-                });
-    
-                for await (const line of rl) {
-                    if (pattern.test(line)) {
-                        selectedLogs.push(line);
-                        length++;
-                        totalSelectedLogs++;
-                        if (totalSelectedLogs >= pageSize) break;
-                    }
+            const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
+            const rl = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity
+            });
+
+            for await(const line of rl){
+                if(pattern.test(line)){
+                    selectedLogs.push(line);
+                    length++;
                 }
-    
-                rl.close();
+                if(length === this.pageSize) break;
             }
-    
-            console.log(`${dateStr}: ${length} logs selected`);
         }
-            
-        console.log(`Total logs selected: ${selectedLogs.length}`);
-        console.timeEnd('patternmatching');
+        
         return {
-            logscount: selectedLogs.length,
             logs: selectedLogs
-        };
+        }
     }
 
-    private createPatternFromQueryData(data: LogQueryDTO): string {
+    private createPatternFromQueryData(data: Query): string {
         // return "d85212b8-e5ce-40eb-80b3-35a1bf735853|f78647e7-8712-4ab2-a426-8d5d0d14807e|c069a9db-227f-49e9-834c-38a1284ffde3|a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
         const { domain, task, taskType, contextId, level, chain, from, to } = data;
         let regexString = "";
@@ -625,6 +595,24 @@ export class ManagerStatistic implements OnModuleInit {
             }
         }
     }
+
+    public async test3(){
+        const logFiles = [
+            'log-2024-02-26.json',
+            'log-2024-02-27.json',
+            'log-2024-02-28.json',
+            'log-2024-02-29.json',
+            'log-2024-03-01.json',
+            'log-2024-03-02.json',
+            'log-2024-03-03.json',
+            'log-2024-03-04.json',
+            'log-2024-03-05.json'
+        ]
+
+        for (const logFile of logFiles) {
+            
+        }
+    }
 }
 
 interface LogEntry {
@@ -634,11 +622,6 @@ interface LogEntry {
 
 interface PageInfo {
     pageNumber: number;
-    range: PageDict[];
-}
-
-interface PageDict {
     date: string;
-    start: number;
-    end: number;
+    startLine: number;
 }

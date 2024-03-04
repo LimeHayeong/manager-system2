@@ -13,20 +13,40 @@ export interface GridResultDTO {
     grids: Task.GRID[]
 }
 
-export interface LogQueryDTO {
-    domain?: string;
-    task?: string;
-    taskType?: Task.TaskType;
-    contextId?: string[];
-    level?: Task.LogLevel;
-    chain?: string;
-    from?: number;
-    to?: number;
+export interface LogQueryDTO extends Query {
+    initial?: boolean;
     pageNumber?: number;
-    pageSize?: number;
+    pageDate?: string;
+    pageStartLine?: number;
 }
 
 export interface LogQueryResultDTO {
-    logscount: number;
-    logs: Task.Log[];
+    query: Query,
+    meta: meta,
+    logs: Task.Log[]
+}
+
+interface pageInfo {
+    pageNumber: number,
+    date: string,
+    startLine: number
+}
+
+export interface Query {
+    domain?: string;
+    task?: string;
+    taskType?: string;
+    contextId?: string[],
+    level?: Task.LogLevel,
+    chain?: string,
+    from?: number,
+    to?: number,
+}
+
+interface meta {
+    initial?: boolean;
+    totalLogs?: number;
+    currentPage?: number;
+    pageSize?: number;
+    pageInfos?: pageInfo[],
 }
