@@ -100,9 +100,20 @@ export class ManagerController {
 
     // for test
     @Get('/patternmatching')
-    test(){
-        this.statistic.pattern();
+    async test(@Req() req: Request,
+    @Res() res: Response,
+    @Query() query: LogQueryDTO,
+    ) {
+    console.log(query)
+    const result = await this.statistic.doPattern(query);
+    const response: ApiResponse = {
+        success: true,
+        statusCode: 200,
+        message: `로그 쿼리 성공`,
+        data: null
     }
+    res.status(200).json(response);
+}
 
     // for testing
     @Get('/setfiles')

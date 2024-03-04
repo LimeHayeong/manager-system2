@@ -19,6 +19,7 @@ const maxStatisticNumber = 30;
 export class ManagerStatistic implements OnModuleInit {
     private statisticState: Task.TaskStatisticState[] = [];
     private maxStatisticNumber: number;
+    private pageSize: 100;
 
     constructor(
         private readonly logger: LoggerService,
@@ -338,7 +339,7 @@ export class ManagerStatistic implements OnModuleInit {
 
     public async queryLog(data: LogQueryDTO): Promise<LogQueryResultDTO>{
         console.time('queryLogs');
-        let { from, to, pageNumber = 0, pageSize = 1000 } = data;
+        let { from, to, pageNumber = 0, pageSize = 999999} = data;
         // from to 없으면 만들어줘야 되는데.
         // from과 to 값이 없으면 기본값 설정
         if (!from || !to) {
@@ -357,10 +358,12 @@ export class ManagerStatistic implements OnModuleInit {
         let currentOffset = pageNumber * pageSize;
         let remainingLogs = pageSize; // 남은 로그 수
     
+        let length;
         for (const dateStr of dateList) {
             // 조건 달성하면 바로 종료하는 건데, 전체가 몇 개인지 알려주려면 없어야 함.
             // if (remainingLogs <= 0) break;
-    
+            length = 0;
+            
             const filePath = path.join('logs', `log-${dateStr}.json`);
             if (fs.existsSync(filePath)) {
                 // identifyLogPositions에서는 전체 로그 위치를 반환하므로, 여기서는 파일별로 처리할 필요가 있음
@@ -370,6 +373,7 @@ export class ManagerStatistic implements OnModuleInit {
                 // 조건에 맞는 로그가 충분히 많지 않을 경우 다음 파일로 넘어감
                 if (positions.length < currentOffset) {
                     currentOffset -= positions.length; // 다음 파일에서 처리해야 할 오프셋 조정
+                    console.log('offsets:', currentOffset);
                     continue;
                 }
                 
@@ -384,16 +388,19 @@ export class ManagerStatistic implements OnModuleInit {
                     if (selectedPositions.includes(lineNumber)) {
                         const log = JSON.parse(line);
                         selectedLogs.push(log);
+                        length++;
                         if (selectedLogs.length >= pageSize) break; // 필요한 로그 수를 충족했다면 루프 종료
                     }
                     lineNumber++;
                 }
                 
                 rl.close();
-                remainingLogs -= selectedLogs.length; // 남은 로그 수 업데이트
+                remainingLogs -= length; // 남은 로그 수 업데이트
             }
+            console.log(dateStr, length);
         }
-    
+        console.log(selectedLogs.length)
+
         console.timeEnd('queryLogs');
         return {
             logscount: selectedLogs.length,
@@ -424,7 +431,6 @@ export class ManagerStatistic implements OnModuleInit {
     }
     
     private async identifyLogPositions(filePath: string, conditionCheck: (log: Task.Log) => boolean): Promise<number[]> {
-        debugger;
         const positions: number[] = [];
         let lineNumber = 0;
         let accumulatedLines = '';
@@ -439,7 +445,6 @@ export class ManagerStatistic implements OnModuleInit {
             while ((lineEndIndex = accumulatedLines.indexOf('\n')) !== -1) {
                 const line = accumulatedLines.slice(0, lineEndIndex);
                 accumulatedLines = accumulatedLines.slice(lineEndIndex + 1);
-                debugger;
     
                 try {
                     const log: Task.Log = JSON.parse(line);
@@ -457,10 +462,8 @@ export class ManagerStatistic implements OnModuleInit {
         // 마지막 남은 부분 처리
         if (accumulatedLines) {
             try {
-                debugger;
                 const log: Task.Log = JSON.parse(accumulatedLines);
                 if (conditionCheck(log)) {
-                    debugger;
                     positions.push(lineNumber);
                 }
             } catch (error) {
@@ -470,77 +473,33 @@ export class ManagerStatistic implements OnModuleInit {
     
         return positions;
     }
-    
-    public async patternRaw() {
+
+    public async doPattern(query: LogQueryDTO) {
         console.time('patternmatching');
-        let from;
-        let to;
-        let pageNumber = 0;
-        let pageSize = 1000;
-        // from to 없으면 만들어줘야 되는데.
-        // from과 to 값이 없으면 기본값 설정
-        if (!from || !to) {
-            const todayTimestamp = new Date().getTime(); // 오늘 날짜의 Unix timestamp
-            const sevenDaysAgoTimestamp = new Date().getTime() - (7 * 24 * 60 * 60 * 1000); // 7일 전의 Unix timestamp
     
-            from = from || sevenDaysAgoTimestamp;
-            to = to || todayTimestamp;
-        }
-
-        console.log(from, to);
-
-        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
-        let selectedLogs: Task.Log[] = [];
-        
-        let currentOffset = pageNumber * pageSize;
-        let remainingLogs = pageSize; // 남은 로그 수
-
-        for (const dateStr of dateList) {
-            const filePath = path.join('logs', `log-${dateStr}.json`);
-            if (fs.existsSync(filePath)) {
-                const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
-
-
-                const pattern = new RegExp(this.createPatternFromQueryData({}), 'g');
-                const matches = fileContent.matchAll(pattern);
-
-                for (const match of matches) {
-                    console.log(match);
-
-                }
-            }
-        }
-
-        console.timeEnd('patternmatching');
-        return {
-            logscount: selectedLogs.length,
-            logs: selectedLogs
-        };
-    }
-
-    public async pattern() {
-        console.time('patternmatching');
-
-        let from;
-        let to;
         let pageNumber = 0;
-        let pageSize = 9999999999;
-        // from과 to 값이 없으면 기본값 설정
-        if (!from || !to) {
-            const todayTimestamp = new Date().getTime();
-            const sevenDaysAgoTimestamp = todayTimestamp - (7 * 24 * 60 * 60 * 1000);
-            from = from || sevenDaysAgoTimestamp;
-            to = to || todayTimestamp;
-        }
-    
-        const dateList = this.createDateRangeList(new Date(+from), new Date(+to));
+        const pageSize = 999999; // 페이지 크기를 100으로 설정
+
+        const { from, to} = query;
+        const { startDate, endDate } = this.setDateRange(from, to)
+        const dateList = this.createDateHourRangeList(startDate, endDate);
         let selectedLogs = [];
+        let totalSelectedLogs = 0; // 총 선택된 로그의 수
     
-        for (const dateStr of dateList) {
-            console.log(dateStr);
-            const filePath = path.join('logs', `log-${dateStr}.json`);
+        const testQuery1 = {
+            domain: "ServiceA",
+            task: "processRT",
+            taskType: Task.TaskType.CRON
+        };
+    
+        for(const dateStr of dateList){
+            let length = 0;
+    
+            if (!dateStr) break; // 날짜 리스트의 끝에 도달하면 반복 종료
+    
+            const filePath = path.join('logs2', `log-${dateStr}.json`);
             if (fs.existsSync(filePath)) {
-                const pattern = new RegExp(this.createPatternFromQueryData({}), 'g');
+                const pattern = new RegExp(this.createPatternFromQueryData(testQuery1));
                 const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
                 const rl = readline.createInterface({
                     input: fileStream,
@@ -549,17 +508,20 @@ export class ManagerStatistic implements OnModuleInit {
     
                 for await (const line of rl) {
                     if (pattern.test(line)) {
-                        // console.log('true');
-                        selectedLogs.push(line); // 현재 줄이 패턴과 일치하는 경우, 배열에 추가
-                        if (selectedLogs.length >= pageSize) break;
+                        selectedLogs.push(line);
+                        length++;
+                        totalSelectedLogs++;
+                        if (totalSelectedLogs >= pageSize) break;
                     }
                 }
+    
+                rl.close();
             }
     
-            if (selectedLogs.length >= pageSize) break;
+            console.log(`${dateStr}: ${length} logs selected`);
         }
-        console.log(selectedLogs);
-    
+            
+        console.log(`Total logs selected: ${selectedLogs.length}`);
         console.timeEnd('patternmatching');
         return {
             logscount: selectedLogs.length,
@@ -568,22 +530,75 @@ export class ManagerStatistic implements OnModuleInit {
     }
 
     private createPatternFromQueryData(data: LogQueryDTO): string {
-        // 여기서 data를 기반으로 필요한 정규 표현식 패턴을 생성합니다.
-        // 이는 예시로, 실제 패턴은 조건에 맞게 생성해야 합니다.
-        // return '"chain":"Chain_37"'; // 모든 문자에 일치, 실제 조건에 맞는 정규 표현식 필요
-        //return "a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
-        return "d85212b8-e5ce-40eb-80b3-35a1bf735853|f78647e7-8712-4ab2-a426-8d5d0d14807e|c069a9db-227f-49e9-834c-38a1284ffde3|a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
+        // return "d85212b8-e5ce-40eb-80b3-35a1bf735853|f78647e7-8712-4ab2-a426-8d5d0d14807e|c069a9db-227f-49e9-834c-38a1284ffde3|a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
+        const { domain, task, taskType, contextId, level, chain, from, to } = data;
+        let regexString = "";
+
+        // 얘네들은 없앨거임
+        if(domain) regexString = this.addRegexString(regexString, [domain])
+        if(task) regexString = this.addRegexString(regexString, [task])
+        if(taskType) regexString = this.addRegexString(regexString, [taskType])
+        // ...
+    
+        if(contextId) regexString = this.addRegexString(regexString, contextId)
+        if(level) regexString = this.addRegexString(regexString, [level.toString()])
+        if(chain) regexString = this.addRegexString(regexString, [chain])
+
+        // console.log("regex:", regexString)
+
+        return regexString
+    }
+
+    private setDateRange(from?: number, to?: number): { startDate: Date, endDate: Date } {
+        const todayTimestamp = new Date().getTime();
+        const defaultStartTimestamp = todayTimestamp - (7 * 24 * 60 * 60 * 1000); // 7일 전
+    
+        // from과 to가 제공되지 않았다면, 기본값(오늘부터 7일 전)을 사용
+        const startDateTimestamp = from ? from : defaultStartTimestamp;
+        const endDateTimestamp = to ? to : todayTimestamp;
+    
+        const startDate = new Date(startDateTimestamp);
+        const endDate = new Date(endDateTimestamp);
+    
+        return { startDate, endDate };
+    }
+    
+
+    private createDateHourRangeList(startDate: Date, endDate: Date): string[] {
+        const dateList: string[] = [];
+        let currentDateTime = startDate;
+
+        while (currentDateTime <= endDate) {
+            const year = currentDateTime.getFullYear();
+            const month = String(currentDateTime.getMonth() + 1).padStart(2, '0');
+            const day = String(currentDateTime.getDate()).padStart(2, '0');
+            const hour = String(currentDateTime.getHours()).padStart(2, '0');
+            dateList.push(`${year}-${month}-${day}-${hour}`);
+            currentDateTime = new Date(currentDateTime.getTime() + 60 * 60 * 1000);
+        }
+
+        return dateList;
+    }
+
+    private addRegexString(regex: string, data: string[]): string {
+        if (regex.length !== 0) {
+            regex += '.*';
+        }
+        regex += (data.length > 1) ? `(${data.join('|')})` : data[0];
+        return regex;
     }
     
     public async setfiles(logFiles?: string[]): Promise<void> {
         logFiles = [
-            'log-2024-02-21.json',
-            'log-2024-02-22.json',
-            'log-2024-02-23.json',
             'log-2024-02-26.json',
             'log-2024-02-27.json',
             'log-2024-02-28.json',
-            'log-2024-02-29.json'
+            'log-2024-02-29.json',
+            'log-2024-03-01.json',
+            'log-2024-03-02.json',
+            'log-2024-03-03.json',
+            'log-2024-03-04.json',
+            'log-2024-03-05.json'
         ]
 
         for (const logFile of logFiles) {
@@ -615,4 +630,15 @@ export class ManagerStatistic implements OnModuleInit {
 interface LogEntry {
     timestamp: number;
     [key: string]: any;
+}
+
+interface PageInfo {
+    pageNumber: number;
+    range: PageDict[];
+}
+
+interface PageDict {
+    date: string;
+    start: number;
+    end: number;
 }

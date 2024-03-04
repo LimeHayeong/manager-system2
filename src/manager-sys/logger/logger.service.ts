@@ -7,7 +7,7 @@ import { Task } from '../types/task';
 
 // TODO: CONFIG화
 const fileInterval = 1000 * 5; // 5초
-const consoleInterval = 1000 * 1; // 1초
+const consoleInterval = 1000 * 100; // 1초
 // 실제로는 5분 정도로 해도 괜찮다. 1000 * 60 * 5
 const statisticInterval = 1000 * 1;
 
@@ -168,17 +168,18 @@ export class LoggerService {
         try {
             // console.log('[System] flushing console buffer: ' + this.consoleBuffer.length);
             // 검사구문 없으면 더 빠를텐데.
-            this.consoleBuffer.map(log => {
-                if(log.data === null){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}]`)
-                } else if(typeof log.data !=='string' && 'message' in log.data && 'chain' in log.data){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + `[${log.data.chain}] ` + log.data.message)
-                } else if(typeof log.data !== 'string' && 'message' in log.data){
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data.message)
-                } else {
-                    console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data)
-                }
-            });
+            // TODO: 임시로 콘솔 제거.
+            // this.consoleBuffer.map(log => {
+            //     if(log.data === null){
+            //         console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}]`)
+            //     } else if(typeof log.data !=='string' && 'message' in log.data && 'chain' in log.data){
+            //         console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + `[${log.data.chain}] ` + log.data.message)
+            //     } else if(typeof log.data !== 'string' && 'message' in log.data){
+            //         console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data.message)
+            //     } else {
+            //         console.log(`[${log.domain}:${log.task}:${log.taskType}][${log.level}] ` + log.data)
+            //     }
+            // });
             this.consoleBuffer = [];
         } catch (e) {
             console.error('Error during flushing console logs: ', e)
