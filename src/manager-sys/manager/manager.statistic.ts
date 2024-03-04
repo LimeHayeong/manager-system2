@@ -2,12 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline'
 
-import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO } from './dto/task-statistic.dto';
+import { GridRequestDTO, GridResultDTO, LogEntry, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO, pageInfo } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { Helper } from '../util/helper';
-import { LoggerService } from "../logger/logger.service";
+import { ManagerLogger } from "./manager.logger";
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 
@@ -23,7 +23,7 @@ export class ManagerStatistic implements OnModuleInit {
     private pageSize: number = 100;
 
     constructor(
-        private readonly logger: LoggerService,
+        private readonly logger: ManagerLogger,
     ) {
     }
 
@@ -91,6 +91,7 @@ export class ManagerStatistic implements OnModuleInit {
 
     // HTTP CONTEXT
     // TODO: 30개 이상이면 파일 검색 해야하는디.
+    @Helper.ExecutionTimerSync
     public getTaskStatistic(
         data: TaskStatisticRequestDTO
         ): TaskHistogramDTO {
@@ -110,6 +111,7 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
+    @Helper.ExecutionTimerSync
     public getAllStatistic(taskType?: Task.TaskType): Task.TaskStatisticState[] {
         // 일단 CRON만 전달하는데 맞나?
         return this.statisticState
@@ -122,6 +124,7 @@ export class ManagerStatistic implements OnModuleInit {
             })
     }
 
+    @Helper.ExecutionTimerAsync
     public async getGrid(data: GridRequestDTO): Promise<GridResultDTO> {
         // TODO: 지금은 상관없는데 파일크기가 커지면 문제 발생할 수 있음.
         // TODO: Log-statistic 작성하는 친구와 Lock mechanism을 잘 활용해야함.
@@ -208,20 +211,6 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
-    private createDateRangeList(startDate: Date, endDate: Date): string[] {
-        const dateList: string[] = [];
-        let currentDate = new Date(startDate.toISOString().split('T')[0]); // 시작 날짜의 "YYYY-MM-DD" 부분만 사용하여 날짜 객체 생성
-        const end = new Date(endDate.toISOString().split('T')[0]); // 종료 날짜의 "YYYY-MM-DD" 부분만 사용하여 날짜 객체 생성
-    
-        while (currentDate <= end) {
-            dateList.push(currentDate.toISOString().split('T')[0]);
-            // 현재 날짜에 1일 추가
-            currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-        }
-    
-        return dateList;
-    }
-
     private async setInitialStatisticState() {
         while(this.logger.getStatisticLogUsing()){
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -235,7 +224,6 @@ export class ManagerStatistic implements OnModuleInit {
             if(line){
                 try {
                     const log = JSON.parse(line);
-                    // console.log(log);
                     const taskIdx = this.findTask({ domain: log.domain, task: log.task, taskType: log.taskType})
                     if(taskIdx !== -1){
                         const currentTaskStatistic = this.statisticState[taskIdx]
@@ -268,59 +256,7 @@ export class ManagerStatistic implements OnModuleInit {
         // )
     }
 
-    private async readLogFile(
-        filePath: string,
-        conditionCheck: (log: Task.Log) => boolean,
-        // maxResults: number = 9999,
-    ): Promise<Task.Log[]> {
-        const matchingLogs: Task.Log[] = [];
-        let buffer = '';
-        let lines = [];
-
-        const processLines = (lines: string[]) => {
-            for (const line of lines) {
-                try {
-                    const log: Task.Log = JSON.parse(line);
-                    if (conditionCheck(log)) {
-                        matchingLogs.push(log);
-                        // if (matchingLogs.length >= maxResults) {
-                        //     return; // 최대 결과에 도달하면 처리 중단
-                        // }
-                    }
-                } catch (error) {
-                    console.error('Error parsing JSON from line:', error);
-                }
-            }
-        };
-
-        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-
-        for await (const chunk of fileStream) {
-            buffer += chunk;
-            let pos;
-            while ((pos = buffer.indexOf('\n')) >= 0) {
-                lines.push(buffer.substring(0, pos));
-                buffer = buffer.substring(pos + 1);
-
-                if (lines.length >= 100) {
-                    processLines(lines);
-                    lines = [];
-                }
-            }
-        }
-
-        // 남은 줄 처리
-        if (buffer) {
-            lines.push(buffer); // 마지막 부분에 줄바꿈이 없는 경우 처리
-        }
-        if (lines.length > 0) {
-            processLines(lines);
-        }
-
-        return matchingLogs;
-    }
-
-    @Helper.ExecutionTimer
+    @Helper.ExecutionTimerAsync
     public async doPattern(query: LogQueryDTO): Promise<LogQueryResultDTO> {
         // contextId들 줬으면 from, to 특정 짓는 로직 추가.
 
@@ -332,10 +268,10 @@ export class ManagerStatistic implements OnModuleInit {
             let selectedLogs = [];
             let totalSelectedLogs = 0; // 총 선택된 로그의 수
 
-            const pageInfo: PageInfo[] = [];
+            const pageInfo: pageInfo[] = [];
             let currentPageNumber = 0;
             let currentPageLineNumber = 0;
-            let currentPageInfo: PageInfo;
+            let currentPageInfo: pageInfo;
         
             const pattern = new RegExp(this.createPatternFromQueryData(query));
             for(const dateStr of dateList){
@@ -504,12 +440,10 @@ export class ManagerStatistic implements OnModuleInit {
         const { domain, task, taskType, contextId, level, chain, from, to } = data;
         let regexString = "";
 
-        // 얘네들은 없앨거임
+        // 순차 적용이라 속도가 그렇게 느리지 않음.
         if(domain) regexString = this.addRegexString(regexString, [domain])
         if(task) regexString = this.addRegexString(regexString, [task])
         if(taskType) regexString = this.addRegexString(regexString, [taskType])
-        // ...
-    
         if(contextId) regexString = this.addRegexString(regexString, contextId)
         if(level) regexString = this.addRegexString(regexString, [level.toString()])
         if(chain) regexString = this.addRegexString(regexString, [chain])
@@ -595,33 +529,4 @@ export class ManagerStatistic implements OnModuleInit {
             }
         }
     }
-
-    public async test3(){
-        const logFiles = [
-            'log-2024-02-26.json',
-            'log-2024-02-27.json',
-            'log-2024-02-28.json',
-            'log-2024-02-29.json',
-            'log-2024-03-01.json',
-            'log-2024-03-02.json',
-            'log-2024-03-03.json',
-            'log-2024-03-04.json',
-            'log-2024-03-05.json'
-        ]
-
-        for (const logFile of logFiles) {
-            
-        }
-    }
-}
-
-interface LogEntry {
-    timestamp: number;
-    [key: string]: any;
-}
-
-interface PageInfo {
-    pageNumber: number;
-    date: string;
-    startLine: number;
 }

@@ -26,7 +26,8 @@ export interface LogQueryResultDTO {
     logs: Task.Log[]
 }
 
-interface pageInfo {
+// TODO: DTO 아래애들 적당한 곳으로 옮겨야 함.
+export interface pageInfo {
     pageNumber: number,
     date: string,
     startLine: number
@@ -49,4 +50,9 @@ interface meta {
     currentPage?: number;
     pageSize?: number;
     pageInfos?: pageInfo[],
+}
+
+export interface LogEntry {
+    timestamp: number;
+    [key: string]: any;
 }

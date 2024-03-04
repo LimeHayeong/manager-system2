@@ -22,6 +22,12 @@ GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&domain=ServiceA&task=proce
 ### 전범위 조회의 pagination
 GET http://{{URL}}:{{PORT}}/manager/logs?domain=ServiceA&task=processRT&taskType=CRON&pageNumber=1&pageDate=2024-02-26-17&pageStartLine=102 HTTP/1.1
 
+### graph 1시간치 조회
+GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&domain=ServiceA&task=processRT&taskType=CRON&from=1709186400002&to=1709189999013 HTTP/1.1
+
+### grid 1개치 조회
+
+
 ### Set files
 GET http://{{URL}}:{{PORT}}/manager/setfiles HTTP/1.1
 

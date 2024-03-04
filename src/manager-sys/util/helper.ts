@@ -99,7 +99,7 @@ export namespace Helper {
         return descriptor;
     }
 
-    export function ExecutionTimer(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+    export function ExecutionTimerAsync(target: any, propertyName: string, descriptor: PropertyDescriptor) {
         const originalMethod = descriptor.value;
         descriptor.value = async function(...args: any[]) {
             console.time(propertyName);
@@ -111,6 +111,23 @@ export namespace Helper {
                 throw e;
             } finally {
                 console.timeEnd(propertyName)
+            }
+        }
+        return descriptor;
+    }
+
+    export function ExecutionTimerSync(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = function(...args: any[]) {
+            console.time(propertyName);
+            try {
+                const result = originalMethod.apply(this, args);
+                return result;
+            } catch(e) {
+                console.error('task helper catch: ' + e.stack);
+                throw e;
+            } finally {
+                console.timeEnd(propertyName);
             }
         }
         return descriptor;

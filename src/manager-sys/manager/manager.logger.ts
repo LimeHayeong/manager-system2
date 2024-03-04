@@ -12,7 +12,7 @@ const consoleInterval = 1000 * 100; // 1초
 const statisticInterval = 1000 * 1;
 
 @Injectable()
-export class LoggerService {
+export class ManagerLogger {
     private fileBuffer: Task.Log[] = [];
     private consoleBuffer: Task.Log[] = [];
     private statisticBuffer: Task.StatisticLog[] = [];
