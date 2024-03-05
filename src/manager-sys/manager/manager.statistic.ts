@@ -1,11 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as readline from 'readline'
-
-import { GridRequestDTO, GridResultDTO, LogEntry, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO, pageInfo } from './dto/task-statistic.dto';
+import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO, pageInfo } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
+import { FileService } from '../file/file.service';
 import { Helper } from '../util/helper';
 import { LoggerService } from '../logger/logger.service';
 import { Task } from "../types/task";
@@ -14,6 +11,8 @@ import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 // TODO: Configuration
 const maxStatisticNumber = 30;
 const pageSize = 100;
+const defaultGridBlockNumber = 24 * 7; // 24시간, 7일
+const defaultGridBlockSize = 60 * 60 * 1000; // 1시간.
 
 @Injectable()
 export class ManagerStatistic implements OnModuleInit {
@@ -23,6 +22,7 @@ export class ManagerStatistic implements OnModuleInit {
 
     constructor(
         private readonly logger: LoggerService,
+        private readonly fileService: FileService,
     ) {
     }
 
@@ -97,7 +97,6 @@ export class ManagerStatistic implements OnModuleInit {
         ): TaskHistogramDTO {
         const { domain, task, taskType, number, from , to } = data;
         const taskIdx = this.findTask({domain, task, taskType});
-        // const logFilePath = 'logs/log-statistic.json'
         if(taskIdx === -1){
             throw new NotFoundException(`${domain}:${task}:${taskType}를 찾을 수 없습니다.`)
         }else{
@@ -129,20 +128,10 @@ export class ManagerStatistic implements OnModuleInit {
         // TODO: 지금은 상관없는데 파일크기가 커지면 문제 발생할 수 있음.
         // TODO: Log-statistic 작성하는 친구와 Lock mechanism을 잘 활용해야함.
 
-        const blockNumber = data.blockNumber ? data.blockNumber : 24 * 7;
-        const blockSize = data.blockSize ? data.blockSize : 60 * 60 * 1000;
+        const blockNumber = data.blockNumber ? data.blockNumber : defaultGridBlockNumber;
+        const blockSize = data.blockSize ? data.blockSize : defaultGridBlockSize;
 
-        while(this.logger.getStatisticLogUsing()){
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.logger.useStatisticLog();
-
-        const statisticLogFile = fs.readFileSync('logs/log-statistic.json', {encoding: 'utf-8'})
-        const logs = statisticLogFile.trim()
-            .split('\n')
-            .filter(line => line.trim() !== '')
-            .map(line => JSON.parse(line));
-            // JSON 배열로 변환 완료
+        const logs = await this.fileService.getStatisticLogsToJson()
         
         const gridStates = StateFactory.createGrid(TaskIdentity, blockNumber)
 
@@ -178,7 +167,8 @@ export class ManagerStatistic implements OnModuleInit {
             currentState.grid[idx].contextIds.push(data.contextId);
         })
         
-        this.logger.freeStatisticLog();
+        // file lock 해제
+        this.fileService.freeFile(this.fileService.getStatisticLogFileName());
 
         return {
             grids: gridStates
@@ -214,37 +204,27 @@ export class ManagerStatistic implements OnModuleInit {
     }
 
     private async setInitialStatisticState() {
-        while(this.logger.getStatisticLogUsing()){
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.logger.useStatisticLog();
+        const logs = await this.fileService.getStatisticLogsToJson()
 
-        const fileContent = fs.readFileSync('logs/log-statistic.json', { encoding: 'utf-8' });
-        const lines = fileContent.split(/\r?\n/).reverse();
+        for(let i = logs.length - 1; i >= 0; i--){
+            const log = logs[i]
+            const taskIdx = this.findTask({ domain: log.domain, task: log.task, taskType: log.taskType})
+            // task 없으면 생략
+            if(taskIdx === -1) continue;
 
-        for(const line of lines){
-            if(line){
-                try {
-                    const log = JSON.parse(line);
-                    const taskIdx = this.findTask({ domain: log.domain, task: log.task, taskType: log.taskType})
-                    if(taskIdx !== -1){
-                        const currentTaskStatistic = this.statisticState[taskIdx]
-                        if(currentTaskStatistic.recentStatistics.length < this.maxStatisticNumber){
-                            currentTaskStatistic.recentStatistics.push({
-                                contextId: log.contextId,
-                                data: log.data,
-                                timestamp: log.timestamp,
-                                executionTime: log.executionTime,
-                            });
-                        }
-                    }
-                } catch (error) {
-
-                }
+            const currentTaskStatistic = this.statisticState[taskIdx]
+            if(currentTaskStatistic.recentStatistics.length < this.maxStatisticNumber){
+                currentTaskStatistic.recentStatistics.push({
+                    contextId: log.contextId,
+                    data: log.data,
+                    timestamp: log.timestamp,
+                    executionTime: log.executionTime,
+                });
             }
         }
 
-        this.logger.freeStatisticLog();
+        // file lock 해제
+        this.fileService.freeFile(this.fileService.getStatisticLogFileName())
 
         // queue가 아닌 1차원 배열이라 해당 과정 수행해야함...
         this.statisticState.map(state => {
@@ -279,48 +259,43 @@ export class ManagerStatistic implements OnModuleInit {
             for(const dateStr of dateList){
                 let length = 0;
         
-                const filePath = path.join('logs2', `log-${dateStr}.json`);
-                if (fs.existsSync(filePath)) {
-                    const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-                    const rl = readline.createInterface({
-                        input: fileStream,
-                        crlfDelay: Infinity
-                    });
-        
-                    let lineNumber = 0;
-                    for await (const line of rl) {
-                        if (pattern.test(line)) {
-                            selectedLogs.push(line);
-                            length++;
-                            totalSelectedLogs++;
+                // 파일이름으로 FileStream 만들어줌.
+                const rl = this.fileService.getReadLineByFileName(`log-${dateStr}.json`);
+                // fileStream 못 만들면 넘어감.
+                if(!rl) continue;
 
-                            if(currentPageNumber === 0){
-                                // 첫 페이지 시작
-                                currentPageInfo = {
-                                    pageNumber: currentPageNumber++,
-                                    date: dateStr,
-                                    startLine: lineNumber
-                                }
-                            }
-                            currentPageLineNumber++;
+                let lineNumber = 0;
+                for await (const line of rl) {
+                    if(!pattern.test(line)) continue;
 
-                            if(currentPageLineNumber === this.pageSize){
-                                pageInfo.push(currentPageInfo);
-                                currentPageLineNumber = 0;
-                                currentPageInfo = {
-                                    pageNumber: currentPageNumber++,
-                                    date: dateStr,
-                                    startLine: lineNumber+1
-                                }
-                            }
+                    selectedLogs.push(line);
+                    length++;
+                    totalSelectedLogs++;
 
+                    if(currentPageNumber === 0){
+                        // 첫 페이지 시작
+                        currentPageInfo = {
+                            pageNumber: currentPageNumber++,
+                            date: dateStr,
+                            startLine: lineNumber
                         }
-                        lineNumber++;
                     }
-        
-                    rl.close();
+                    currentPageLineNumber++;
+
+                    if(currentPageLineNumber === this.pageSize){
+                        pageInfo.push(currentPageInfo);
+                        currentPageLineNumber = 0;
+                        currentPageInfo = {
+                            pageNumber: currentPageNumber++,
+                            date: dateStr,
+                            startLine: lineNumber+1
+                        }
+                    }
+
+                    lineNumber++;
                 }
         
+                rl.close();
                 // console.log(`${dateStr}: ${length} logs selected`);
             }
             if(currentPageLineNumber > 0){
@@ -336,8 +311,6 @@ export class ManagerStatistic implements OnModuleInit {
                 },
                 logs: [],
             };
-
-            
         } else {
             // 처음 아니고 query에 조건 다 주어지면
             const { pageDate, pageStartLine } = query;
@@ -347,28 +320,21 @@ export class ManagerStatistic implements OnModuleInit {
             const pattern = new RegExp(this.createPatternFromQueryData(query))
             let newPageDate = pageDate;
             while(selectedLogs.length < this.pageSize){
-                const filePath = path.join('logs2', `log-${newPageDate}.json`);
-                if(fs.existsSync(filePath)){
-                    const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-                    const rl = readline.createInterface({
-                        input: fileStream,
-                        crlfDelay: Infinity
-                    });
+                // 파일이름으로 FileStream 만들어주고, 못 만들면 루프 탈출함.
+                const rl = this.fileService.getReadLineByFileName(`log-${newPageDate}.json`);
+                if(!rl) break;
 
-                    let lineNumber = 0;
-                    for await(const line of rl){
-                        lineNumber++;
-                        if(lineNumber >= pageStartLine && pattern.test(line)){
-                            selectedLogs.push(JSON.parse(line));
-                            if(selectedLogs.length === this.pageSize) break;
-                        }
+                let lineNumber = 0;
+                for await(const line of rl){
+                    lineNumber++;
+                    if(lineNumber >= pageStartLine && pattern.test(line)){
+                        selectedLogs.push(JSON.parse(line));
+                        if(selectedLogs.length === this.pageSize) break;
                     }
-                    rl.close();
-                    newPageDate = this.incerementHourlyTimestamp(newPageDate)
-                }else{
-                    // 로그가 100개 미만으로 떨어지고, 다음 파일이 존재하지 않으면 break.
-                    break;
                 }
+                rl.close();
+                    
+                newPageDate = this.incerementHourlyTimestamp(newPageDate)
             }
             return {
                 query: query,
@@ -406,42 +372,7 @@ export class ManagerStatistic implements OnModuleInit {
         return incrementedTimestamp;
     }
 
-    public async doPatternWithPagination(query: any) {
-        const { pageNumber, pageInfos } = query
-
-        let selectedLogs = [];
-        const dateList: string[] = [];
-        dateList.push(pageInfos[pageNumber-1].date)
-        if(pageInfos[pageNumber-1].date !== pageInfos[pageNumber].date)
-            dateList.push(pageInfos[pageNumber].date)
-        
-        const pattern = new RegExp(this.createPatternFromQueryData(query));
-        for(const dateStr of dateList){
-            let length = 0
-
-            const filePath = path.join('logs2', `log-${dateStr}.json`);
-            const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8' });
-            const rl = readline.createInterface({
-                input: fileStream,
-                crlfDelay: Infinity
-            });
-
-            for await(const line of rl){
-                if(pattern.test(line)){
-                    selectedLogs.push(line);
-                    length++;
-                }
-                if(length === this.pageSize) break;
-            }
-        }
-        
-        return {
-            logs: selectedLogs
-        }
-    }
-
     private createPatternFromQueryData(data: Query): string {
-        // return "d85212b8-e5ce-40eb-80b3-35a1bf735853|f78647e7-8712-4ab2-a426-8d5d0d14807e|c069a9db-227f-49e9-834c-38a1284ffde3|a4cb186b-aaa1-4cfd-bebf-e346f3cf1656"
         const { domain, task, taskType, contextId, level, chain, from, to } = data;
         let regexString = "";
 
@@ -495,43 +426,5 @@ export class ManagerStatistic implements OnModuleInit {
         }
         regex += (data.length > 1) ? `(${data.join('|')})` : data[0];
         return regex;
-    }
-    
-    public async setfiles(logFiles?: string[]): Promise<void> {
-        logFiles = [
-            'log-2024-02-26.json',
-            'log-2024-02-27.json',
-            'log-2024-02-28.json',
-            'log-2024-02-29.json',
-            'log-2024-03-01.json',
-            'log-2024-03-02.json',
-            'log-2024-03-03.json',
-            'log-2024-03-04.json',
-            'log-2024-03-05.json'
-        ]
-
-        for (const logFile of logFiles) {
-            const filePath = path.join('logs', logFile);
-            const fileContent = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
-            const logs = fileContent.split('\n').filter(line => line.trim()).map(line => JSON.parse(line) as LogEntry);
-    
-            const logsByHour: { [key: string]: LogEntry[] } = {};
-    
-            for (const log of logs) {
-                const date = new Date(log.timestamp);
-                const dateHourKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}`;
-                
-                if (!logsByHour[dateHourKey]) {
-                    logsByHour[dateHourKey] = [];
-                }
-    
-                logsByHour[dateHourKey].push(log);
-            }
-    
-            for (const [dateHourKey, logs] of Object.entries(logsByHour)) {
-                const outputFilePath = path.join('logs2', `log-${dateHourKey}.json`);
-                await fs.promises.writeFile(outputFilePath, logs.map(log => JSON.stringify(log)).join('\n'), { encoding: 'utf-8' });
-            }
-        }
     }
 }

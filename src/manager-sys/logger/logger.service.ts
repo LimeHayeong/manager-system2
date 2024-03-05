@@ -1,7 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path'
-
 import { Cron } from '@nestjs/schedule';
+import { FileService } from '../file/file.service';
 import { Injectable } from '@nestjs/common';
 import { Task } from '../types/task';
 
@@ -21,9 +19,10 @@ export class LoggerService {
     private fileInterval: number;
     private consoleInterval: number;
     private statisticInterval: number;
-    private isStatisticLogUsing: boolean = false;
 
-    constructor() {
+    constructor(
+        private readonly fileService: FileService
+    ) {
         // this.maxBufferSize = tempBufferSize;
         this.fileInterval = fileInterval;
         this.consoleInterval = consoleInterval;
@@ -46,26 +45,17 @@ export class LoggerService {
     // 현재 날짜로부터 8일 이전 로그 삭제
     @Cron('21 37 1 * * *')
     private deleteOldLogs() {
-        const logDirectory = 'logs'; // 로그가 저장되는 디렉토리
-        const files = fs.readdirSync(logDirectory);
-
+        // Log 디렉토리에 파일 목록 반환
+        const files = this.fileService.getFileList(
+            this.fileService.getStatisticLogFileName()
+        )
+        
         const currentDate = new Date();
         currentDate.setDate(currentDate.getDate() - 8); // 8일 이전 날짜 계산
 
         files.forEach(file => {
-            const filePath = path.join(logDirectory, file);
-            const datePattern = /log-(\d{4}-\d{2}-\d{2})\.json$/; // 정규 표현식으로 날짜 형식 매칭
-            const match = file.match(datePattern);
-            if (match) {
-                const fileDate = match[1]; // 첫 번째 캡처 그룹 (날짜)
-                const fileDateObject = new Date(fileDate);
-
-                if (fileDateObject < currentDate) {
-                    // 파일 날짜가 8일 이전인 경우 삭제
-                    fs.unlinkSync(filePath);
-                    console.log(`[System] Deleted old log file: ${file}`);
-                }
-            }
+            this.fileService.deleteOldFiles(file, currentDate)
+            this.fileService.getFilePath(file);
         });
     }
 
@@ -73,47 +63,14 @@ export class LoggerService {
     // 시간이 좀 걸림.
     @Cron('23 38 1 * * *')
     private async truncateLogStatisticFile() {
-        // 혹시라도 사용 중이면 대기
-        while (this.isStatisticLogUsing) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.isStatisticLogUsing = true;
+        const filePath = await this.fileService.getFilePathIfLockWaitingWhenWrite(
+            this.fileService.getStatisticLogFileName())
 
-        try {
-            console.log('[System] Truncating log-statistic file...');
+        await this.fileService.truncateFile(filePath);
         
-            const filePath = path.join('logs/log-statistic.json');
-            
-            // 파일 크기 확인
-            let stats = fs.statSync(filePath);
-            let fileSizeInBytes = stats.size;
-            const targetSizeInBytes = 1024 * 1024; // 1MB in bytes
-    
-        
-            if (fileSizeInBytes > targetSizeInBytes) {
-                // 파일 읽기
-                let fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
-                let lines = fileContent.split('\n');
-                
-                // 파일 크기가 목표보다 큰 동안 앞부분의 100줄 제거
-                while (fileSizeInBytes > targetSizeInBytes && lines.length > 100) {
-                    // 앞부분의 100줄 한 번에 제거
-                    lines.splice(0, 100);
-        
-                    // 변경된 내용으로 파일 크기 재계산
-                    fileContent = lines.join('\n');
-                    fileSizeInBytes = Buffer.byteLength(fileContent, 'utf8');
-                }
-                
-                // 변경된 내용 저장
-                fs.writeFileSync(filePath, fileContent, { encoding: 'utf8' });
-                console.log('[System] Reduced size of log-statistic file to under 0.5MB.');
-            }
-        } catch (e) {
-            console.error(e);
-        }
-        
-        this.isStatisticLogUsing = false;
+        // fileLock 해제
+        this.fileService.freeFile(
+            this.fileService.getStatisticLogFileName())
     }
 
 
@@ -128,8 +85,9 @@ export class LoggerService {
     // Buffer 비우면서 Log 파일에 기록.
     private async fileBufferFlush() {
          // 날짜 기반으로 동적 파일 이름 사용
-         const filename = this.getLogFilename('logs/log');
-         this.flushBufferToFile(this.fileBuffer, filename);
+         const filepath = this.fileService.getFilePath(this.getLogFilename());
+         console.log('fileBufferFlush: ', filepath)
+         this.flushBufferToFile(this.fileBuffer, filepath);
          this.fileBuffer = [];
     }
 
@@ -137,29 +95,17 @@ export class LoggerService {
         this.statisticBuffer.push(log);
     }
 
-    public getStatisticLogUsing(): boolean {
-        return this.isStatisticLogUsing
-    }
-
-    public useStatisticLog() {
-        this.isStatisticLogUsing = true;
-    }
-    public freeStatisticLog() {
-        this.isStatisticLogUsing = false;
-    }
-
     private async statisticBufferFlush() {
-        // 혹시라도 사용 중이면 대기
-        while (this.isStatisticLogUsing) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        this.isStatisticLogUsing = true;
+        // statistic log file 사용 중이면 대기
+        const filePath = await this.fileService.getFilePathIfLockWaitingWhenWrite(
+            this.fileService.getStatisticLogFileName()
+        )
 
-        const filename = 'logs/log-statistic.json';
-        this.flushBufferToFile(this.statisticBuffer, filename);
+        this.flushBufferToFile(this.statisticBuffer, filePath);
         this.statisticBuffer = [];
 
-        this.isStatisticLogUsing = false;
+        // Lock 사용 해제
+        this.fileService.freeFile(this.fileService.getStatisticLogFileName())
     }
 
     public async pushConsoleLog(log: Task.Log) {
@@ -188,22 +134,23 @@ export class LoggerService {
         }
     }
 
-    public getStatisticLogFilename(): string {
-        return this.getLogFilename('logs/log-statistic');
-    }
-
     // 현재 날짜를 기반으로 로그 파일명 동적 생성
-    private getLogFilename(basePath: string): string {
-        const date = new Date().toISOString().slice(0, 10); // 형식: YYYY-MM-DD
-        return `${basePath}-${date}.json`; // 필요에 따라 형식 조정
+    // TODO: 현재날짜가 아니라 로그 timestamp 기준으로 해야함.
+    private getLogFilename(): string {
+        const now = new Date();
+        const date = now.toISOString().slice(0, 10); // 형식: YYYY-MM-DD
+        const hour = now.getHours().toString().padStart(2, '0'); // 24시간 형식, 두 자리로 표현
+    
+        console.log(`log-${date}-${hour}.json`);
+        return `log-${date}-${hour}.json`; // 필요에 따라 형식 조정
     }
 
     // 파일 쓰기를 처리하는 메소드
-    private flushBufferToFile(buffer: Task.Log[] | Task.StatisticLog[], filename: string) {
+    private flushBufferToFile(buffer: Task.Log[] | Task.StatisticLog[], filepath: string) {
         try {
             const data = buffer.map(log => JSON.stringify(log)).join('\n');
-            fs.appendFileSync(filename, data + '\n');
-            console.log(`[System] ${buffer.length}개 항목을 ${filename}에 플러시함`);
+            this.fileService.appendFileSync(filepath, data)
+            console.log(`[System] ${buffer.length}개 항목을 ${filepath}에 플러시함`);
         } catch (e) {
             console.error('[System] 로그 플러시 중 오류 발생: ', e);
         }

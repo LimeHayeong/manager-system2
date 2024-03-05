@@ -1,4 +1,5 @@
 import { AppService } from './app.service';
+import { FileModule } from './manager-sys/file/file.module';
 import { ManagerModule } from './manager-sys/manager/manager.module';
 import { Module } from '@nestjs/common';
 import { SampleWorkModule } from './domains/sample-work/sample-work.module';

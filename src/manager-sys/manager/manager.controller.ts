@@ -97,10 +97,4 @@ export class ManagerController {
         }
         res.status(200).json(response);
     }
-
-    // for testing
-    @Get('/setfiles')
-    test2() {
-        this.statistic.setfiles();
-    }
 }
