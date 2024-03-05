@@ -7,23 +7,22 @@ import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
 import { Helper } from '../util/helper';
-import { ManagerLogger } from "./manager.logger";
+import { LoggerService } from '../logger/logger.service';
 import { Task } from "../types/task";
 import { TaskStatisticRequestDTO } from '../common-dto/task-control.dto';
 
+// TODO: Configuration
 const maxStatisticNumber = 30;
+const pageSize = 100;
 
-// Q. taskIdx 찾는 과정이 manager랑 같이 있음. 이게 맞을까?
-// 인덱스를 아예 동기화시키면 그럴 필요 없기는 함. 일단은 성능에 큰 문제를 주지는 않을 것.
-// Q. State로 갖고 있을 거면, 솔직히 파일 뒤적거릴 필요도 없음. 그냥 State에서 찾으면 됨.
 @Injectable()
 export class ManagerStatistic implements OnModuleInit {
     private statisticState: Task.TaskStatisticState[] = [];
     private maxStatisticNumber: number;
-    private pageSize: number = 100;
+    private pageSize: number;
 
     constructor(
-        private readonly logger: ManagerLogger,
+        private readonly logger: LoggerService,
     ) {
     }
 
@@ -34,6 +33,7 @@ export class ManagerStatistic implements OnModuleInit {
     private async asyncIntialization(): Promise<void> {
         // intialization할 때 최근 30치 통계 넣어줄까?
         this.maxStatisticNumber = maxStatisticNumber;
+        this.pageSize = pageSize;
 
         TaskIdentity.forEach(taskId => this.statisticState.push(StateFactory.createTaskStatisticState(taskId)));
         await this.setInitialStatisticState();
@@ -190,6 +190,7 @@ export class ManagerStatistic implements OnModuleInit {
         return idx;
     }
 
+    // statistic state를 statistic log로 포맷팅하는 함수.
     private statisticLogFormat(taskId: Task.ITaskIdentity, data: Task.taskStatistic, contextId: string, timestamp: number, executionTime: number): Task.StatisticLog {
         return {
             domain: taskId.domain,
@@ -202,6 +203,7 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
+    // task state 새로 반영할 때 새로운 객체 생성하는 함수
     private newData(): Task.taskStatistic {
         return {
             logCount: 0,
@@ -362,10 +364,12 @@ export class ManagerStatistic implements OnModuleInit {
                         }
                     }
                     rl.close();
+                    newPageDate = this.incerementHourlyTimestamp(newPageDate)
+                }else{
+                    // 로그가 100개 미만으로 떨어지고, 다음 파일이 존재하지 않으면 break.
+                    break;
                 }
-                newPageDate = this.incerementHourlyTimestamp(newPageDate)
             }
-
             return {
                 query: query,
                 meta: {
@@ -378,6 +382,7 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
+    // Timestamp 증가함수, 파일 순회용.
     private incerementHourlyTimestamp(timestamp: string) {
         // Parse the timestamp into date and hour parts
         const parts = timestamp.split("-");

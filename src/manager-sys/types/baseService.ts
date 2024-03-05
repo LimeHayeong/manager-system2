@@ -5,6 +5,10 @@ import { ManagerService } from "../manager/manager.service";
 import { NotFoundException } from "@nestjs/common";
 import { Task } from "./task";
 
+// TODO: configuration
+const defaultErrorStackLength = 4;
+const maxErrorStackLength = 7;
+
 export abstract class BaseService {
     protected abstract cls: ClsService;
     protected abstract managerService: ManagerService;
@@ -48,15 +52,15 @@ export abstract class BaseService {
 
     protected async error(data: string | Error,
         chain?: string,
-        errorStack: number = 4
+        errorStack: number = defaultErrorStackLength
     ) {
         const result: Task.IContext = {
             message: '',
             stack: []
         };
 
-        if(errorStack < 0) errorStack = 4;
-        if(errorStack > 7) errorStack = 7;
+        if(errorStack < 0) errorStack = defaultErrorStackLength;
+        if(errorStack > maxErrorStackLength) errorStack = maxErrorStackLength;
 
         const context = this.cls.get('context');
 

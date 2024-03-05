@@ -3,7 +3,7 @@ import { StateFactory, TaskIdentity, WorkIdentity } from '../types/state.templat
 import { TaskStateWithNewLogsDTO, TaskStateWithSeqLogsDTO } from './dto/task-state.dto';
 
 import { LogQueryDTO } from './dto/task-statistic.dto';
-import { ManagerLogger } from './manager.logger';
+import { LoggerService } from '../logger/logger.service';
 import { ManagerStatistic } from './manager.statistic';
 import { Task } from '../types/task';
 import { TaskStatesNoLogsDTO } from './dto/task-states.dto';
@@ -21,7 +21,7 @@ export class ManagerService {
 
     constructor(
         private readonly wsGateway: WsReceiveGateway,
-        private readonly logger: ManagerLogger,
+        private readonly logger: LoggerService,
         private readonly statistic: ManagerStatistic
     ) {
         this.initialization();

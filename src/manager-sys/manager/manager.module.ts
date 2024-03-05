@@ -1,14 +1,14 @@
-import { FileManager } from './file.manager';
+import { FileModule } from '../file/file.module';
+import { LoggerModule } from '../logger/logger.module';
 import { ManagerController } from './manager.controller';
-import { ManagerLogger } from './manager.logger';
 import { ManagerService } from './manager.service';
 import { ManagerStatistic } from './manager.statistic';
 import { Module } from '@nestjs/common';
 import { WsReceiveModule } from 'src/ws/receive/ws.receive.module';
 
 @Module({
-  imports: [WsReceiveModule],
-  providers: [ManagerService, ManagerStatistic, ManagerLogger, FileManager],
+  imports: [WsReceiveModule, LoggerModule, FileModule],
+  providers: [ManagerService, ManagerStatistic],
   controllers: [ManagerController],
   exports: [ManagerService]
 })

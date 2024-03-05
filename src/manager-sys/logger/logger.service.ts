@@ -10,9 +10,10 @@ const fileInterval = 1000 * 5; // 5초
 const consoleInterval = 1000 * 100; // 1초
 // 실제로는 5분 정도로 해도 괜찮다. 1000 * 60 * 5
 const statisticInterval = 1000 * 1;
+const bufferSize = 500;
 
 @Injectable()
-export class ManagerLogger {
+export class LoggerService {
     private fileBuffer: Task.Log[] = [];
     private consoleBuffer: Task.Log[] = [];
     private statisticBuffer: Task.StatisticLog[] = [];
@@ -36,6 +37,7 @@ export class ManagerLogger {
     }
 
     private initialization() {
+        // this.maxBufferSize = bufferSize;
         setInterval(() => this.fileBuffer.length > 0 && this.fileBufferFlush(), this.fileInterval);
         setInterval(() => this.consoleBuffer.length > 0 && this.consoleBufferFlush(), this.consoleInterval);
         setInterval(() => this.statisticBuffer.length > 0 && this.statisticBufferFlush(), this.statisticInterval)
