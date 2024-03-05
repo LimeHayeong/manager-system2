@@ -1,4 +1,4 @@
-import { GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO, pageInfo } from './dto/task-statistic.dto';
+import { CategoryCount, GridRequestDTO, GridResultDTO, LogQueryDTO, LogQueryResultDTO, Query, TaskHistogramDTO, pageInfo } from './dto/task-statistic.dto';
 import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { StateFactory, TaskIdentity } from '../types/state.template';
 
@@ -181,9 +181,11 @@ export class ManagerStatistic implements OnModuleInit {
         let result;
         if(initial){
             const fromTo = await this.contextIdToFromTo(query.contextId);
-            (fromTo) ?
-                result = await this.initialQuerySearch(query, fromTo.from.toString(), fromTo.to.toString()) :
-                result = await this.initialQuerySearch(query);
+            // console.log('doPattern-', fromTo);
+            // fromTo가 undefined가 아니면 fromTo의 값으로 initialQuerySearch를 호출
+            result = fromTo !== undefined ?
+                await this.initialQuerySearch(query, fromTo.from.toString(), fromTo.to.toString()) :
+                await this.initialQuerySearch(query);
         }else{
             result = await this.paginationQuerySearch(query);
         }   
@@ -254,10 +256,10 @@ export class ManagerStatistic implements OnModuleInit {
     }
 
     private async initialQuerySearch(query: LogQueryDTO, from?: string, to?: string): Promise<LogQueryResultDTO>{
-        from ? from : from = query.from.toString();
-        to ? to : to = query.to.toString();
+        let fromN = from ?? query.from?.toString();
+        let toN = to ?? query.to?.toString();
 
-        const { startDate, endDate } = this.setDateRange(+from, +to)
+        const { startDate, endDate } = this.setDateRange(+fromN, +toN)
         const dateList = this.createDateHourRangeList(startDate, endDate);
         // console.log(dateList);
         let selectedLogs = [];
@@ -316,15 +318,22 @@ export class ManagerStatistic implements OnModuleInit {
         if(currentPageLineNumber > 0){
             pageInfo.push(currentPageInfo)
         }
+
+        // 카테고리별로 집계하는 로직
+        const categoryCounts = this.aggregateCategories(selectedLogs);
             
-        console.log(`Total logs selected: ${selectedLogs.length}`);
+        console.log(`Total logs selected: ${totalSelectedLogs}`);
+        const parsedLogs = selectedLogs
+            .slice(0, this.pageSize)
+            .map(log => JSON.parse(log))
         return {
             query: {},
             meta: {
-                totalLogs: selectedLogs.length,
+                totalLength: totalSelectedLogs,
                 pageInfos: pageInfo,
+                category: categoryCounts,
             },
-            logs: [],
+            logs: parsedLogs
         };
     }
 
@@ -353,32 +362,81 @@ export class ManagerStatistic implements OnModuleInit {
                 
             newPageDate = this.incerementHourlyTimestamp(newPageDate)
         }
+
         return {
             query: query,
             meta: {
                 initial: false,
                 currentPage: query.pageNumber,
-                pageSize: this.pageSize
+                pageSize: this.pageSize,
+                category: query.category
             },
             logs: selectedLogs
         }
     }
 
+    // TODO: 카테고리 확장성있게 로직 변경
+    @Helper.ExecutionTimerSync
+    private aggregateCategories(logs: string[]): CategoryCount {
+        const categoryCounts: CategoryCount = {};
+        logs.forEach(log => {
+            const logObj = JSON.parse(log);
+            
+            // 기본 카테고리 집계
+            this.aggregateBasicCategories(categoryCounts, logObj, ['domain', 'task', 'taskType', 'level']);
+    
+            // contextId 집계
+            if (logObj.contextId) {
+                this.aggregateNestedCategories(categoryCounts, 'contextId', logObj.contextId, ['work', 'task']);
+            }
+    
+            // data.chain 집계
+            if (logObj.data?.chain) {
+                this.aggregateNestedCategories(categoryCounts, 'data', logObj.data, ['chain']);
+            }
+        });
+    
+        return categoryCounts;
+    }
+    
+    // 기본 카테고리 집계 함수
+    private aggregateBasicCategories(categoryCounts: CategoryCount, logObj: any, categories: string[]) {
+        categories.forEach(category => {
+            const value = logObj[category];
+            if (value) {
+                categoryCounts[category] = categoryCounts[category] ?? {};
+                categoryCounts[category][value] = (categoryCounts[category][value] as number || 0) + 1;
+            }
+        });
+    }
+    
+    // 중첩된 카테고리 집계 함수
+    private aggregateNestedCategories(categoryCounts: CategoryCount, categoryName: string, nestedObj: any, subCategories: string[]) {
+        subCategories.forEach(subCategory => {
+            const value = nestedObj[subCategory];
+            if (value) {
+                categoryCounts[categoryName] = categoryCounts[categoryName] ?? {};
+                let nestedCategory = categoryCounts[categoryName][subCategory] as any;
+                nestedCategory = nestedCategory ?? {};
+                nestedCategory[value] = (nestedCategory[value] ?? 0) + 1;
+                categoryCounts[categoryName][subCategory] = nestedCategory;
+            }
+        });
+    }
+
     private async contextIdToFromTo(contextId: string | string[]): Promise<{from: number, to: number}> {
+        // console.log(contextId);
         // contextId가 null값이면,
         if(!contextId) return undefined;
 
         const logsRl = await this.fileService.getReadLineByFileName(
             this.fileService.getStatisticLogFileName()
         )
-        let contextIdA: string[];
-        (typeof contextId === 'string') ?
-            contextIdA = [contextId] :
-            contextIdA = contextId
+        let contextIdA = Array.isArray(contextId) ? contextId : [contextId];
         const qContextId: LogQueryDTO = {
             contextId: contextIdA
         }
-        console.log(qContextId);
+        // console.log(qContextId);
         const pattern = this.createPatternFromQueryData(qContextId);
         let selectedLog: Task.StatisticLog;
         for await (const line of logsRl) {
@@ -434,7 +492,7 @@ export class ManagerStatistic implements OnModuleInit {
         if(level) regexString = this.addRegexString(regexString, [level.toString()])
         if(chain) regexString = this.addRegexString(regexString, [chain])
 
-        console.log("regex:", regexString)
+        // console.log("regex:", regexString)
 
         return new RegExp(regexString)
     }
@@ -477,3 +535,4 @@ export class ManagerStatistic implements OnModuleInit {
         return regex;
     }
 }
+

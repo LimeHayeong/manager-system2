@@ -37,7 +37,6 @@ export namespace Helper {
                     }
                 }
             } catch (e) {
-                console.log('task helper catch: ' + e.stack);
                 throw e;
             }
         }
@@ -91,7 +90,6 @@ export namespace Helper {
                     }
                 }
             } catch (e) {
-                console.log('task helper catch: ' + e.stack);
                 throw e;
             }
         };
@@ -107,7 +105,6 @@ export namespace Helper {
                 const result = await originalMethod.apply(this, args);
                 return result;
             } catch(e) {
-                console.error('task helper catch: ' + e.stack);
                 throw e;
             } finally {
                 console.timeEnd(propertyName)
@@ -124,7 +121,6 @@ export namespace Helper {
                 const result = originalMethod.apply(this, args);
                 return result;
             } catch(e) {
-                console.error('task helper catch: ' + e.stack);
                 throw e;
             } finally {
                 console.timeEnd(propertyName);

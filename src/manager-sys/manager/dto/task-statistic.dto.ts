@@ -18,6 +18,7 @@ export interface LogQueryDTO extends Query {
     pageNumber?: number;
     pageDate?: string;
     pageStartLine?: number;
+    category?: CategoryCount;
 }
 
 export interface LogQueryResultDTO {
@@ -46,11 +47,18 @@ export interface Query {
 
 interface meta {
     initial?: boolean;
-    totalLogs?: number;
+    totalLength?: number;
     currentPage?: number;
     pageSize?: number;
     pageInfos?: pageInfo[],
+    category?: CategoryCount
 }
+
+export type CategoryCount = {
+    [category: string]: {
+        [value: string]: number | { [subCategory: string]: number };
+    };
+};
 
 export interface LogEntry {
     timestamp: number;
