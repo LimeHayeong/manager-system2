@@ -25,8 +25,10 @@ GET http://{{URL}}:{{PORT}}/manager/logs?domain=ServiceA&task=processRT&taskType
 ### graph 1시간치 조회
 GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&domain=ServiceA&task=processRT&taskType=CRON&from=1709186400002&to=1709189999013 HTTP/1.1
 
-### grid 1개치 조회
+### ContextId로 조회
+GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&contextId=37213f44-3af4-48e9-8a58-c89ae371911e HTTP/1.1
 
+### grid 1개치 조회
 
 ### Set files
 GET http://{{URL}}:{{PORT}}/manager/setfiles HTTP/1.1

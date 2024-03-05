@@ -7,11 +7,12 @@ import { Injectable } from "@nestjs/common";
 import { LogEntry } from '../manager/dto/task-statistic.dto';
 import { Task } from 'test/test-grid';
 
-const logDirName = 'logs'
+const logDirName = 'logs2'
 const newLogDir = 'logs2'
 const logStatisticFileName = 'log-statistic.json'
 const fileLockWaitingTime = 1 * 500 // 0.5 sec
 const maxStatisticLogFile = 1024 * 1024 // 1MB
+const defaultHighWaterMark = 64 * 1024 // 64KB
 
 @Injectable()
 export class FileService {
@@ -70,7 +71,10 @@ export class FileService {
         // filePath 없으면 undefined 반환.
         if(!filePath) return undefined;
 
-        const fileStream = fs.createReadStream(filePath, { encoding: 'utf-8'});
+        const fileStream = fs.createReadStream(filePath, {
+            encoding: 'utf-8',
+            highWaterMark: defaultHighWaterMark
+        },);
         return readline.createInterface({
             input: fileStream,
             crlfDelay: Infinity

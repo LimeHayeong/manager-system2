@@ -86,7 +86,6 @@ export class LoggerService {
     private async fileBufferFlush() {
          // 날짜 기반으로 동적 파일 이름 사용
          const filepath = this.fileService.getFilePath(this.getLogFilename());
-         console.log('fileBufferFlush: ', filepath)
          this.flushBufferToFile(this.fileBuffer, filepath);
          this.fileBuffer = [];
     }
@@ -141,7 +140,6 @@ export class LoggerService {
         const date = now.toISOString().slice(0, 10); // 형식: YYYY-MM-DD
         const hour = now.getHours().toString().padStart(2, '0'); // 24시간 형식, 두 자리로 표현
     
-        console.log(`log-${date}-${hour}.json`);
         return `log-${date}-${hour}.json`; // 필요에 따라 형식 조정
     }
 

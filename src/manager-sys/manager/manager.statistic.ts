@@ -175,6 +175,21 @@ export class ManagerStatistic implements OnModuleInit {
         }
     }
 
+    @Helper.ExecutionTimerAsync
+    public async doPattern(query: LogQueryDTO): Promise<LogQueryResultDTO> {
+        const { initial } = query
+        let result;
+        if(initial){
+            const fromTo = await this.contextIdToFromTo(query.contextId);
+            (fromTo) ?
+                result = await this.initialQuerySearch(query, fromTo.from.toString(), fromTo.to.toString()) :
+                result = await this.initialQuerySearch(query);
+        }else{
+            result = await this.paginationQuerySearch(query);
+        }   
+        return result;
+    }
+
     private findTask(taskId: Task.ITaskIdentity): number{
         const idx = this.statisticState.findIndex(task => task.domain === taskId.domain && task.task === taskId.task && task.taskType === taskId.taskType);
         return idx;
@@ -238,113 +253,146 @@ export class ManagerStatistic implements OnModuleInit {
         // )
     }
 
-    @Helper.ExecutionTimerAsync
-    public async doPattern(query: LogQueryDTO): Promise<LogQueryResultDTO> {
-        // contextId들 줬으면 from, to 특정 짓는 로직 추가.
+    private async initialQuerySearch(query: LogQueryDTO, from?: string, to?: string): Promise<LogQueryResultDTO>{
+        from ? from : from = query.from.toString();
+        to ? to : to = query.to.toString();
 
-        const { from, to, initial } = query
-        if(initial) {
-            const { startDate, endDate } = this.setDateRange(+from, +to)
-            const dateList = this.createDateHourRangeList(startDate, endDate);
-            // console.log(dateList);
-            let selectedLogs = [];
-            let totalSelectedLogs = 0; // 총 선택된 로그의 수
+        const { startDate, endDate } = this.setDateRange(+from, +to)
+        const dateList = this.createDateHourRangeList(startDate, endDate);
+        // console.log(dateList);
+        let selectedLogs = [];
+        let totalSelectedLogs = 0; // 총 선택된 로그의 수
 
-            const pageInfo: pageInfo[] = [];
-            let currentPageNumber = 0;
-            let currentPageLineNumber = 0;
-            let currentPageInfo: pageInfo;
-        
-            const pattern = new RegExp(this.createPatternFromQueryData(query));
-            for(const dateStr of dateList){
-                let length = 0;
-        
-                // 파일이름으로 FileStream 만들어줌.
-                const rl = this.fileService.getReadLineByFileName(`log-${dateStr}.json`);
-                // fileStream 못 만들면 넘어감.
-                if(!rl) continue;
+        const pageInfo: pageInfo[] = [];
+        let currentPageNumber = 1;
+        let currentPageLineNumber = 0;
+        let currentPageInfo: pageInfo;
+    
+        const pattern = new RegExp(this.createPatternFromQueryData(query));
+        for(const dateStr of dateList){
+    
+            // 파일이름으로 FileStream 만들어줌.
+            const rl = this.fileService.getReadLineByFileName(`log-${dateStr}.json`);
+            // fileStream 못 만들면 넘어감.
+            if(!rl) {
+                continue;
+            }
 
-                let lineNumber = 0;
-                for await (const line of rl) {
-                    if(!pattern.test(line)) continue;
+            let lineNumber = 0;
+            let length = 0;
+            for await (const line of rl) {
+                if(!pattern.test(line)) continue;
 
-                    selectedLogs.push(line);
-                    length++;
-                    totalSelectedLogs++;
+                selectedLogs.push(line);
+                totalSelectedLogs++;
+                length++;
 
-                    if(currentPageNumber === 0){
-                        // 첫 페이지 시작
-                        currentPageInfo = {
-                            pageNumber: currentPageNumber++,
-                            date: dateStr,
-                            startLine: lineNumber
-                        }
+                if(currentPageNumber === 1){
+                    // 첫 페이지 시작
+                    currentPageInfo = {
+                        pageNumber: currentPageNumber++,
+                        date: dateStr,
+                        startLine: lineNumber
                     }
-                    currentPageLineNumber++;
-
-                    if(currentPageLineNumber === this.pageSize){
-                        pageInfo.push(currentPageInfo);
-                        currentPageLineNumber = 0;
-                        currentPageInfo = {
-                            pageNumber: currentPageNumber++,
-                            date: dateStr,
-                            startLine: lineNumber+1
-                        }
-                    }
-
-                    lineNumber++;
                 }
-        
-                rl.close();
-                // console.log(`${dateStr}: ${length} logs selected`);
+                currentPageLineNumber++;
+
+                if(currentPageLineNumber === this.pageSize){
+                    pageInfo.push(currentPageInfo);
+                    currentPageLineNumber = 0;
+                    currentPageInfo = {
+                        pageNumber: currentPageNumber++,
+                        date: dateStr,
+                        startLine: lineNumber+1
+                    }
+                }
+
+                lineNumber++;
             }
-            if(currentPageLineNumber > 0){
-                pageInfo.push(currentPageInfo)
+    
+            rl.close();
+            // console.log(`${dateStr}: ${length} logs selected`);
+        }
+        if(currentPageLineNumber > 0){
+            pageInfo.push(currentPageInfo)
+        }
+            
+        console.log(`Total logs selected: ${selectedLogs.length}`);
+        return {
+            query: {},
+            meta: {
+                totalLogs: selectedLogs.length,
+                pageInfos: pageInfo,
+            },
+            logs: [],
+        };
+    }
+
+    private async paginationQuerySearch(query: LogQueryDTO): Promise<LogQueryResultDTO>{
+        // 처음 아니고 query에 조건 다 주어지면
+        const { pageDate, pageStartLine } = query;
+
+        let selectedLogs = [];
+
+        const pattern = this.createPatternFromQueryData(query)
+        let newPageDate = pageDate;
+        while(selectedLogs.length < this.pageSize){
+            // 파일이름으로 FileStream 만들어주고, 못 만들면 루프 탈출함.
+            const rl = this.fileService.getReadLineByFileName(`log-${newPageDate}.json`);
+            if(!rl) break;
+
+            let lineNumber = 0;
+            for await(const line of rl){
+                lineNumber++;
+                if(lineNumber >= pageStartLine && pattern.test(line)){
+                    selectedLogs.push(JSON.parse(line));
+                    if(selectedLogs.length === this.pageSize) break;
+                }
             }
+            rl.close();
                 
-            console.log(`Total logs selected: ${selectedLogs.length}`);
-            return {
-                query: {},
-                meta: {
-                    totalLogs: selectedLogs.length,
-                    pageInfos: pageInfo,
-                },
-                logs: [],
-            };
-        } else {
-            // 처음 아니고 query에 조건 다 주어지면
-            const { pageDate, pageStartLine } = query;
+            newPageDate = this.incerementHourlyTimestamp(newPageDate)
+        }
+        return {
+            query: query,
+            meta: {
+                initial: false,
+                currentPage: query.pageNumber,
+                pageSize: this.pageSize
+            },
+            logs: selectedLogs
+        }
+    }
 
-            let selectedLogs = [];
+    private async contextIdToFromTo(contextId: string | string[]): Promise<{from: number, to: number}> {
+        // contextId가 null값이면,
+        if(!contextId) return undefined;
 
-            const pattern = new RegExp(this.createPatternFromQueryData(query))
-            let newPageDate = pageDate;
-            while(selectedLogs.length < this.pageSize){
-                // 파일이름으로 FileStream 만들어주고, 못 만들면 루프 탈출함.
-                const rl = this.fileService.getReadLineByFileName(`log-${newPageDate}.json`);
-                if(!rl) break;
-
-                let lineNumber = 0;
-                for await(const line of rl){
-                    lineNumber++;
-                    if(lineNumber >= pageStartLine && pattern.test(line)){
-                        selectedLogs.push(JSON.parse(line));
-                        if(selectedLogs.length === this.pageSize) break;
-                    }
-                }
-                rl.close();
-                    
-                newPageDate = this.incerementHourlyTimestamp(newPageDate)
+        const logsRl = await this.fileService.getReadLineByFileName(
+            this.fileService.getStatisticLogFileName()
+        )
+        let contextIdA: string[];
+        (typeof contextId === 'string') ?
+            contextIdA = [contextId] :
+            contextIdA = contextId
+        const qContextId: LogQueryDTO = {
+            contextId: contextIdA
+        }
+        console.log(qContextId);
+        const pattern = this.createPatternFromQueryData(qContextId);
+        let selectedLog: Task.StatisticLog;
+        for await (const line of logsRl) {
+            if(pattern.test(line)){
+                selectedLog = JSON.parse(line);
             }
+        }
+        if(selectedLog){
             return {
-                query: query,
-                meta: {
-                    initial: false,
-                    currentPage: query.pageNumber,
-                    pageSize: this.pageSize
-                },
-                logs: selectedLogs
+                from: selectedLog.timestamp - selectedLog.executionTime - 1000 * 60 * 5,
+                to: selectedLog.timestamp
             }
+        }else{
+            return undefined
         }
     }
 
@@ -372,7 +420,7 @@ export class ManagerStatistic implements OnModuleInit {
         return incrementedTimestamp;
     }
 
-    private createPatternFromQueryData(data: Query): string {
+    private createPatternFromQueryData(data: Query): RegExp {
         const { domain, task, taskType, contextId, level, chain, from, to } = data;
         let regexString = "";
 
@@ -380,13 +428,15 @@ export class ManagerStatistic implements OnModuleInit {
         if(domain) regexString = this.addRegexString(regexString, [domain])
         if(task) regexString = this.addRegexString(regexString, [task])
         if(taskType) regexString = this.addRegexString(regexString, [taskType])
-        if(contextId) regexString = this.addRegexString(regexString, contextId)
+        if(contextId) (typeof contextId === 'string') ? 
+            regexString = this.addRegexString(regexString, [contextId]) :
+            regexString = this.addRegexString(regexString, contextId)
         if(level) regexString = this.addRegexString(regexString, [level.toString()])
         if(chain) regexString = this.addRegexString(regexString, [chain])
 
-        // console.log("regex:", regexString)
+        console.log("regex:", regexString)
 
-        return regexString
+        return new RegExp(regexString)
     }
 
     private setDateRange(from?: number, to?: number): { startDate: Date, endDate: Date } {
@@ -402,7 +452,6 @@ export class ManagerStatistic implements OnModuleInit {
     
         return { startDate, endDate };
     }
-    
 
     private createDateHourRangeList(startDate: Date, endDate: Date): string[] {
         const dateList: string[] = [];
