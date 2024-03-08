@@ -177,10 +177,11 @@ export class ManagerStatistic implements OnModuleInit {
 
     @Helper.ExecutionTimerAsync
     public async doPattern(query: LogQueryDTO): Promise<LogQueryResultDTO> {
-        const { initial } = query
+        const { querydata, meta} = this.parseLogQuery(query);
+        const { initial } = meta
         let result;
         if(initial){
-            const fromTo = await this.contextIdToFromTo(query.contextId);
+            const fromTo = await this.contextIdToFromTo(querydata.contextId);
             // console.log('doPattern-', fromTo);
             // fromTo가 undefined가 아니면 fromTo의 값으로 initialQuerySearch를 호출
             result = fromTo !== undefined ?
@@ -256,8 +257,9 @@ export class ManagerStatistic implements OnModuleInit {
     }
 
     private async initialQuerySearch(query: LogQueryDTO, from?: string, to?: string): Promise<LogQueryResultDTO>{
-        let fromN = from ?? query.from?.toString();
-        let toN = to ?? query.to?.toString();
+        const { querydata, meta } = this.parseLogQuery(query);
+        let fromN = from ?? querydata.from?.toString();
+        let toN = to ?? querydata.to?.toString();
 
         const { startDate, endDate } = this.setDateRange(+fromN, +toN)
         const dateList = this.createDateHourRangeList(startDate, endDate);
@@ -270,7 +272,7 @@ export class ManagerStatistic implements OnModuleInit {
         let currentPageLineNumber = 0;
         let currentPageInfo: pageInfo;
     
-        const pattern = new RegExp(this.createPatternFromQueryData(query));
+        const pattern = new RegExp(this.createPatternFromQueryData(querydata));
         for(const dateStr of dateList){
     
             // 파일이름으로 FileStream 만들어줌.
@@ -327,11 +329,10 @@ export class ManagerStatistic implements OnModuleInit {
             .slice(0, this.pageSize)
             .map(log => JSON.parse(log))
         return {
-            query: {},
+            query: querydata,
             meta: {
-                totalLength: totalSelectedLogs,
-                pageInfos: pageInfo,
-                category: categoryCounts,
+                initial: false,
+                currentPageInfo: meta.currentPageInfo,
             },
             logs: parsedLogs
         };
@@ -339,12 +340,14 @@ export class ManagerStatistic implements OnModuleInit {
 
     private async paginationQuerySearch(query: LogQueryDTO): Promise<LogQueryResultDTO>{
         // 처음 아니고 query에 조건 다 주어지면
-        const { pageDate, pageStartLine } = query;
+        const { querydata, meta } = this.parseLogQuery(query);
+        const { requestPageInfo } = meta;
+        const { date, startLine } = requestPageInfo;
 
         let selectedLogs = [];
 
-        const pattern = this.createPatternFromQueryData(query)
-        let newPageDate = pageDate;
+        const pattern = this.createPatternFromQueryData(querydata)
+        let newPageDate = date;
         while(selectedLogs.length < this.pageSize){
             // 파일이름으로 FileStream 만들어주고, 못 만들면 루프 탈출함.
             const rl = this.fileService.getReadLineByFileName(`log-${newPageDate}.json`);
@@ -353,7 +356,7 @@ export class ManagerStatistic implements OnModuleInit {
             let lineNumber = 0;
             for await(const line of rl){
                 lineNumber++;
-                if(lineNumber >= pageStartLine && pattern.test(line)){
+                if(lineNumber >= startLine && pattern.test(line)){
                     selectedLogs.push(JSON.parse(line));
                     if(selectedLogs.length === this.pageSize) break;
                 }
@@ -364,12 +367,14 @@ export class ManagerStatistic implements OnModuleInit {
         }
 
         return {
-            query: query,
+            query: querydata,
             meta: {
                 initial: false,
-                currentPage: query.pageNumber,
+                totalLength: meta.totalLength,
                 pageSize: this.pageSize,
-                category: query.category
+                currentPageInfo: meta.requestPageInfo,
+                category: meta.category,
+                pageInfos: meta.pageInfos
             },
             logs: selectedLogs
         }
@@ -433,7 +438,7 @@ export class ManagerStatistic implements OnModuleInit {
             this.fileService.getStatisticLogFileName()
         )
         let contextIdA = Array.isArray(contextId) ? contextId : [contextId];
-        const qContextId: LogQueryDTO = {
+        const qContextId: Query = {
             contextId: contextIdA
         }
         // console.log(qContextId);
@@ -533,6 +538,32 @@ export class ManagerStatistic implements OnModuleInit {
         }
         regex += (data.length > 1) ? `(${data.join('|')})` : data[0];
         return regex;
+    }
+
+    private parseLogQuery(query: LogQueryDTO) {
+        const { domain, task, taskType, contextId, level, chain, from, to } = query;
+        const { initial, totalLength, pageSize, currentPageInfo, requestPageInfo, category, pageInfos } = query;
+        return {
+            querydata: {
+                domain,
+                task,
+                taskType,
+                contextId,
+                level,
+                chain,
+                from,
+                to
+            },
+            meta: {
+                initial,
+                totalLength,
+                pageSize,
+                currentPageInfo,
+                requestPageInfo,
+                category,
+                pageInfos
+            }
+        }
     }
 }
 

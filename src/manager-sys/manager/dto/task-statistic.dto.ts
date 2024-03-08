@@ -13,12 +13,7 @@ export interface GridResultDTO {
     grids: Task.GRID[]
 }
 
-export interface LogQueryDTO extends Query {
-    initial?: boolean;
-    pageNumber?: number;
-    pageDate?: string;
-    pageStartLine?: number;
-    category?: CategoryCount;
+export interface LogQueryDTO extends Query, meta{
 }
 
 export interface LogQueryResultDTO {
@@ -48,10 +43,11 @@ export interface Query {
 interface meta {
     initial?: boolean;
     totalLength?: number;
-    currentPage?: number;
     pageSize?: number;
-    pageInfos?: pageInfo[],
-    category?: CategoryCount
+    currentPageInfo?: pageInfo;
+    requestPageInfo?: pageInfo;
+    category?: CategoryCount;
+    pageInfos?: pageInfo[];
 }
 
 export type CategoryCount = {

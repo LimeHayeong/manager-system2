@@ -5,7 +5,7 @@ import * as readline from 'readline';
 import { File } from "../types/file";
 import { Injectable } from "@nestjs/common";
 import { LogEntry } from '../manager/dto/task-statistic.dto';
-import { Task } from 'test/test-grid';
+import { Task } from '../types/task';
 
 const logDirName = 'logs2'
 const newLogDir = 'logs2'
