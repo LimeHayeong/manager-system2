@@ -1,10 +1,6 @@
-import { StatisticSchema } from "../database/schemas/statistic.schema";
-import mongoose from "mongoose";
+import { modelsProviders } from "../database/database.providers";
 
 export const statisticProviders = [
-    {
-        provide: 'STATISTIC_MODEL',
-        useFactory: (connection: mongoose.Connection) => connection.model('Statistic', StatisticSchema),
-        inject: ['DATABASE_CONNECTION'],
-      },
+    modelsProviders.exeStatisticModel,
+    modelsProviders.timeStatisticModel
 ]

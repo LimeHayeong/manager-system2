@@ -1,10 +1,5 @@
-import { LogSchema } from "../database/schemas/log.schema";
-import mongoose from "mongoose";
+import { modelsProviders } from "../database/database.providers";
 
 export const logProviders = [
-  {
-    provide: 'LOG_MODEL',
-    useFactory: (connection: mongoose.Connection) => connection.model('Log', LogSchema),
-    inject: ['DATABASE_CONNECTION'],
-  },
+  modelsProviders.logModel
 ];

@@ -1,10 +1,8 @@
 import { Document } from "mongoose";
+import { Stat } from "src/manager-sys/types/statistic";
 
-export interface IStatisticDoc extends Document {
-    readonly taskId: string;
-    readonly contextId: string;
-    // TODO: data type 지정
-    readonly data: any;
-    readonly startAt: number;
-    readonly endAt: number;
+export interface IExeStatisticDoc extends Document, Readonly<Stat.ExeStatistic> {
+}
+
+export interface ITimeStatisticDoc extends Document, Readonly<Stat.TimeStatistic> {
 }
