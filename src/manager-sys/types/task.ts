@@ -53,10 +53,10 @@ export namespace Task {
 
     // Task 통계를 위한 Log
     export interface StatisticLogBase {
-      executionTime: number;
       contextId: string;
       data: taskStatistic;
-      timestamp: number;
+      startAt: number;
+      endAt: number;
     }
 
     // Task 통계 데이터 정보
