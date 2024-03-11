@@ -1,6 +1,6 @@
 import { CustomInterceptor } from "src/manager-sys/global.interceptor";
 import { Server } from "socket.io";
-import { TaskStatesDTO } from "../dto/task-states.dto";
+import { TaskStatesResponseDTO } from "../dto/task-states.dto";
 import { UseInterceptors } from "@nestjs/common";
 import { WebSocketGateway } from "@nestjs/websockets";
 import { WebSocketResponse } from "src/manager-sys/types/ws.response";
@@ -19,17 +19,18 @@ export class WsPushGateway extends baseGateway {
         console.log('[System] ManagerGateway initialized');
     }
     
-    public async emitTaskStateUpdate(data: TaskStatesDTO) {
+    public async emitTaskStateUpdate(data: TaskStatesResponseDTO) {
         // settled 될 때까지 대기.
         while (!this.gatewaySettled) {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
+
         const response: WebSocketResponse = {
             code: 200,
             responseId: uuid(),
             payload: {
-            message: null,
-            data: data
+                message: null,
+                data: data
             }
         }
         this.server.emit('taskStateUpdate', response);

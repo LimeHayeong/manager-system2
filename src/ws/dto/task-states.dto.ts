@@ -1,7 +1,7 @@
-import { Task } from "src/manager-sys/types/task";
+import { DeSerializedTaskState } from "src/manager-sys/manager/dto/task-states.dto";
 
-export class TaskStatesDTO {
-    taskStates: Task.TaskState[];
+export class TaskStatesResponseDTO {
+    taskStates: DeSerializedTaskState[];
     // TODO: workstates
     workStates: any;
 }

@@ -1,9 +1,11 @@
+import { DeSerializedTaskState } from "./dto/task-states.dto";
 import { Injectable } from "@nestjs/common";
 import { Log } from "../types/log";
 import { LogCache } from "../log/log.cache";
 import { ManagerQueue } from "./manager.queue";
 import { Task } from "../types/task";
 import { TaskId } from "../types/taskId";
+import { TaskStatesResponseDTO } from "src/ws/dto/task-states.dto";
 import { WsPushGateway } from "src/ws/push/ws.push.gateway";
 import { v4 as uuid } from 'uuid';
 
@@ -71,12 +73,7 @@ export class ManagerService {
         this.transportLog(log);
 
         // WS Task 상태 업데이트
-        this.wsGateway.emitTaskStateUpdate(
-            {
-                taskStates: this.taskStates,
-                workStates: null,
-            }
-        )
+        this.wsGateway.emitTaskStateUpdate(this.getDeserializedStates())
     }
 
     public async logTask(taskId: string, level: Log.Level, data: Log.IContext, workId?: string) {
@@ -109,17 +106,29 @@ export class ManagerService {
         this.transportLog(log);
 
         // WS Task 상태 업데이트
-        this.wsGateway.emitTaskStateUpdate(
-            {
-                taskStates: this.taskStates,
-                workStates: null,
-            }
-        )
+        this.wsGateway.emitTaskStateUpdate(this.getDeserializedStates())
     }
 
-    public getInitialStates() {
+    public getInitialStates(): TaskStatesResponseDTO{
+        return this.getDeserializedStates();
+    }
+
+    private getDeserializedStates(): TaskStatesResponseDTO {
+        const taskStates: DeSerializedTaskState[] = this.taskStates.map((state) => {
+            const { task, domain, taskType } = TaskId.convertFromTaskId(state.taskId);
+            return {
+                domain: domain,
+                task: task,
+                taskType: taskType,
+                contextId: state.contextId,
+                status: state.status,
+                updatedAt: state.updatedAt,
+                startAt: state.startAt,
+                endAt: state.endAt
+            }
+        })
         return {
-            taskStates: this.taskStates,
+            taskStates: taskStates,
             workStates: null,
         }
     }

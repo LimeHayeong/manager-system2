@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { ILogDoc } from "../database/dto/log.interface";
 import { TaskId } from "../types/taskId";
 import { wsError } from "../types/ws.response";
+import { recentLogsResponseDTO } from "src/ws/dto/recent-logs.dto";
 
 @Injectable()
 export class LogCache implements OnModuleInit {
@@ -32,8 +33,13 @@ export class LogCache implements OnModuleInit {
         }
     }
 
-    public getRecentLogs(taskId: string, offset: number, limit: number): Log.Log[] {
+    public getRecentLogs(taskId: string, offset: number, limit: number): recentLogsResponseDTO {
         if(!this.cache[taskId]) throw new wsError('TaskId not found', 404);
-        return this.cache[taskId].slice(offset, offset + limit);
+        const result = this.cache[taskId].slice(offset, offset + limit)
+        return {
+            offset: offset,
+            limit: limit,
+            logs: result
+        }
     }
 }

@@ -11,5 +11,5 @@ export class recentLogsRequestDTO {
 export class recentLogsResponseDTO {
     offset: number;
     limit: number;
-    recentLogs: Log.Log[];
+    logs: Log.Log[];
 }
