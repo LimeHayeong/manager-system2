@@ -40,7 +40,7 @@ export class LogGateway extends baseGateway {
       }
     } catch (e) {
       response = {
-        code: 500,
+        code: e.code || 500,
         responseId: uuid(),
         payload: {
           message: e.message,

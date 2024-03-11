@@ -3,7 +3,7 @@ import { Log } from "../types/log";
 import { Model } from "mongoose";
 import { ILogDoc } from "../database/dto/log.interface";
 import { TaskId } from "../types/taskId";
-
+import { wsError } from "../types/ws.response";
 
 @Injectable()
 export class LogCache implements OnModuleInit {
@@ -33,7 +33,7 @@ export class LogCache implements OnModuleInit {
     }
 
     public getRecentLogs(taskId: string, offset: number, limit: number): Log.Log[] {
-        if(!this.cache[taskId]) throw new Error('Invalid TaskId');
+        if(!this.cache[taskId]) throw new wsError('TaskId not found', 404);
         return this.cache[taskId].slice(offset, offset + limit);
     }
 }
