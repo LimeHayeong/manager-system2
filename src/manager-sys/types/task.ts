@@ -1,8 +1,8 @@
 export namespace Task {      
     export enum Status {
         TERMINATED = 'TERMINATED',
-        RUNNING = 'RUNNING',
-        IDLE = 'IDLE',
+        PROGRESS = 'PROGRESS',
+        WAITING = 'WAITING',
     }
 
     export interface TaskState {

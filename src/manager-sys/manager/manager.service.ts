@@ -39,7 +39,7 @@ export class ManagerService {
     }
 
     public isRunning(taskId: string) {
-        return this.taskStates.find((state) => state.taskId === taskId).status === Task.Status.RUNNING;
+        return this.taskStates.find((state) => state.taskId === taskId).status === Task.Status.PROGRESS;
     }
 
     public isValidTask(taskId: string) {
@@ -50,7 +50,7 @@ export class ManagerService {
     public async buildTask(taskId: string): Promise<boolean> {
         const currentTask = this.getTaskState(taskId);
         if(!currentTask) return false;
-        if(currentTask.status === Task.Status.RUNNING) return false;
+        if(currentTask.status === Task.Status.PROGRESS) return false;
         return true;
     }
 
@@ -58,7 +58,7 @@ export class ManagerService {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
 
-        currentTask.status = Task.Status.RUNNING;
+        currentTask.status = Task.Status.PROGRESS;
         currentTask.updatedAt = dateNow;
         currentTask.startAt = dateNow;
         currentTask.endAt = null;
@@ -71,6 +71,12 @@ export class ManagerService {
         this.transport(log);
 
         // WS Task 상태 업데이트
+        this.wsGateway.emitTaskStateUpdate(
+            {
+                taskStates: this.taskStates,
+                workStates: null,
+            }
+        )
     }
 
     public async logTask(taskId: string, level: Log.Level, data: Log.IContext, workId?: string) {
@@ -90,7 +96,7 @@ export class ManagerService {
 
         if(Number(taskId.slice(-2)) === TaskId.TaskTypeEnum['CRON']){
             // CRON은 waiting.
-            currentTask.status = Task.Status.IDLE;
+            currentTask.status = Task.Status.WAITING;
         }else{
             // TRIGGER, WORK는 terminated.
             currentTask.status = Task.Status.TERMINATED;
@@ -103,6 +109,12 @@ export class ManagerService {
         this.transport(log);
 
         // WS Task 상태 업데이트
+        this.wsGateway.emitTaskStateUpdate(
+            {
+                taskStates: this.taskStates,
+                workStates: null,
+            }
+        )
     }
 
     private getTaskState(taskId: string) {
