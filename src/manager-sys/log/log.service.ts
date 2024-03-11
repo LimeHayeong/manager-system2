@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ILogDoc } from '../database/interface/log.interface';
+import { ILogDoc } from '../database/dto/log.interface';
 import { Model } from 'mongoose';
 
 @Injectable()

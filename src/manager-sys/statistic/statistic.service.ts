@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { IExeStatisticDoc, ITimeStatisticDoc } from '../database/interface/statistic.interface';
-
+import { IExeStatisticDoc, ITimeStatisticDoc } from '../database/dto/statistic.interface';
 @Injectable()
 export class StatisticService {
     constructor(
@@ -10,6 +9,8 @@ export class StatisticService {
         @Inject('TIME_STATISTIC_MODEL')
         private timeStatisticModel: Model<ITimeStatisticDoc>,
     ) {
+
+
 
     }
 }

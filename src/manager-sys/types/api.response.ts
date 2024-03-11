@@ -1,5 +1,5 @@
 export interface ApiResponse {
-    statusCode: number | null
+    code: number | null
     payload: {
         message: string | null
         data?: any | null
@@ -7,7 +7,7 @@ export interface ApiResponse {
   }
   
   export interface ApiError {
-    statusCode: number | null
+    code: number | null
     payload: {
         message: string | null
         error?: string | string[] | null

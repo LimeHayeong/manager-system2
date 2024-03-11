@@ -7,7 +7,7 @@ export namespace Log {
 
     export interface Log {
         taskId: string;
-        contextId: string[];
+        contextId: string;
         level: Level;
         data: IContext | null;
         timestamp: number; // toISOString

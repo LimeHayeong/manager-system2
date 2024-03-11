@@ -1,3 +1,4 @@
+import { TaskId } from '../types/taskId';
 import { v4 as uuid } from 'uuid';
 
 export namespace Helper {
@@ -23,16 +24,16 @@ export namespace Helper {
         descriptor.value = async function(...args: any[]) {
             try {
                 const data = args[0];
-                if(await this.managerService.buildWork(data)){
+                if(await this.manager.buildWork(data)){
                     // 성공적으로 building에 성공하면,
-                    await this.managerService.startWork(data, this.cls.get('workId'))
+                    await this.manager.startWork(data, this.cls.get('workId'))
                     try {
                         // 원래 메서드 실행
                         const result = await originalMethod.apply(this, args);
                         return result;
                     } finally {
-                        // managerService.end 호출
-                        await this.managerService.endWork(data);
+                        // manager.end 호출
+                        await this.manager.endWork(data);
                     }
                 }
             } catch (e) {
@@ -56,23 +57,27 @@ export namespace Helper {
                 }
 
                 // context에 따라 cls 상태 업데이트
+                
                 const taskIdentity = {
                     domain: this.cls.get('context').domain,
                     task: this.cls.get('context').task,
                     taskType: context
                 };
-                this.cls.set('context', taskIdentity)
 
-                // managerService.build 호출
-                if(await this.managerService.buildTask(this.cls.get('context'))){
+                const taskId = TaskId.convertToTaskId(taskIdentity.domain, taskIdentity.task, taskIdentity.taskType );
+
+                this.cls.set('context', taskId)
+
+                // manager.build 호출
+                if(await this.manager.buildTask(this.cls.get('context'))){
                     // build가 성공적으로 시행되면,
-                    // managerService.start 호출
+                    // manager.start 호출
 
                     // workId가 있다면 workContext임.
                     if(this.cls.get('workId')){
-                        await this.managerService.startTask(this.cls.get('context'), this.cls.get('workId'));
+                        await this.manager.startTask(this.cls.get('context'), this.cls.get('workId'));
                     }else{
-                        await this.managerService.startTask(this.cls.get('context'));
+                        await this.manager.startTask(this.cls.get('context'));
                     }
                     
                     try {
@@ -80,15 +85,19 @@ export namespace Helper {
                         const result = await originalMethod.apply(this, args);
                         return result;
                     } finally {
-                        // managerService.end 호출
+                        // manager.end 호출
                         if(this.cls.get('workId')){
-                            await this.managerService.endTask(this.cls.get('context'), this.cls.get('workId'));
+                            await this.manager.endTask(this.cls.get('context'), this.cls.get('workId'));
                         } else {
-                            await this.managerService.endTask(this.cls.get('context'));
+                            await this.manager.endTask(this.cls.get('context'));
                         }
                     }
+                }else{
+                    throw new Error(`Error on building ${taskId}`)
                 }
             } catch (e) {
+                // for test
+                console.error(e);
                 throw e;
             }
         };

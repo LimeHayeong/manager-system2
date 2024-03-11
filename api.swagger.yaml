@@ -1,0 +1,218 @@
+openapi: 3.0.2
+info:
+  title: Manager system
+  description: Realtime monitoring, control, and log query system
+  version: 1.0.0
+# servers:
+#   - url: https://petstore3.swagger.io/api/v3
+tags:
+  - name: ${task}
+    description: task controller
+  - name: log
+    description: log query with filtering
+  - name: statistic
+    description: statistic data
+ 
+paths:
+  /${task}/start:
+    post:
+      tags:
+        - ${task}
+      summary: Start task
+      description: task controller
+      operationId: start${task}
+      responses:
+        '200':
+          description: task 시작 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: ${task} started
+        '404':
+          description: 해당하는 task 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                notFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: ${task} not found
+        '409':
+          description: 이미 task가 실행중
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                notFound:
+                  value:
+                    code: 409
+                    payload:
+                      message: ${task} already executed
+        
+  /log/recent:
+    get:
+      tags:
+        - log
+      summary: Get recent logs
+      description: Get recent log arrays (default 3)
+      operationId: getRecentLogs
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+
+  
+  /log/query:
+    get:
+      tags:
+        - log
+      summary: Query logs
+      description: Query logs with filtering
+      operationId: queryLogs
+      parameters:
+        # - in: query
+        #   name: level
+        #   schema:
+        #     type: string
+        #   description: log level
+        # - in: query
+        #   name: time
+        #   schema:
+        #     type: string
+        #   description: log time
+        # - in: query
+        #   name: message
+        #   schema:
+        #     type: string
+        #   description: log message
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+
+  /statistic/chart:
+    get:
+      tags:
+        - statistic
+      summary: Get chart
+      description: Get chart data
+      operationId: getStatisticChart
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+
+  /statistic/heatmap:
+    get:
+      tags:
+        - statistic
+      summary: Get heatmap
+      description: Get heatmap data
+      operationId: getStatisticHeatmap
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+
+
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - code
+        - payload
+      properties:
+        code:
+          type: integer
+          format: int32
+        payload:
+          type: object
+          required:
+            - message
+            - data
+          properties:
+            message:
+              type: string
+              nullable: true
+            data:
+              type: object
+              nullable: true
+
+    ApiError:
+      type: object
+      required:
+        - code
+        - payload
+      properties:
+        code:
+          type: integer
+          format: int32
+        payload:
+          type: object
+          required:
+            - message
+            - error
+          properties:
+            message:
+              type: string
+              nullable: true
+            error:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+                - type: null
+    
+    Log:
+      type: object
+      properties:
+        taskId: string;
+        contextId:
+          type: array
+          items:
+            type: string
+        level: string
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              nullable: true
+            chain:
+              type: string
+              nullable: true
+            stack:
+              type: array
+              itmes:
+                type: string
+              nullable: true
+        timestamp: number
+    
+
+            
+
+      

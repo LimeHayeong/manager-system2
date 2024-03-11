@@ -1,5 +1,5 @@
 export interface WebSocketResponse {
-    statusCode: number | null
+    code: number | null
     responseId: string
     payload: {
         message: string | null
@@ -8,7 +8,7 @@ export interface WebSocketResponse {
   }
   
   export interface WebSocketError {
-    statusCode: number | null
+    code: number | null
     responseId: string;
     payload: {
         message: string | null

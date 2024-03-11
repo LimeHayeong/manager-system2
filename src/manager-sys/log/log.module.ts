@@ -9,6 +9,7 @@ import { logProviders } from './log.providers';
   imports: [DatabaseModule],
   providers: [LogService, LogGateway,
   ...logProviders],
+  exports: [LogService],
   controllers: [LogController]
 })
 export class LogModule {}

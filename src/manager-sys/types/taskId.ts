@@ -3,29 +3,29 @@ import { getEnumKeyFromValue, getEnumValueFromKey } from "../util/enum";
 export namespace TaskId {
     export enum DomainEnum {
         ServiceA = 1,
-        ServiceB = 2,
-        ServiceC = 3,
-        ServiceD = 4,
+        ServiceB,
+        ServiceC,
+        ServiceD,
     }
     
     export enum TaskEnum {
-        functionA = 1,
-        functionB = 2,
-        functionC = 3,
-        functionD = 4,
+        processRT = 1,
     }
     
     export enum TaskTypeEnum {
         CRON = 1,
-        TRIGGER = 2,
-        WORK = 3,
+        TRIGGER,
+        WORK
     }
 
     // '001-001-02' 형식의 문자열로 변환하는 함수
-    export function convertToTaskId(domain: keyof typeof DomainEnum, task: keyof typeof TaskEnum, taskType: keyof typeof TaskTypeEnum): string {
-        const domainId = String(getEnumValueFromKey(DomainEnum, domain)).padStart(3, '0');
-        const taskId = String(getEnumValueFromKey(TaskEnum, task)).padStart(3, '0');
-        const taskTypeId = String(getEnumValueFromKey(TaskTypeEnum, taskType)).padStart(2, '0');
+    export function convertToTaskId(domain: string, task: string, taskType: string): string {
+        const domainT = domain as keyof typeof DomainEnum;
+        const taskT = task as keyof typeof TaskEnum;
+        const taskTypeT = taskType as keyof typeof TaskTypeEnum;
+        const domainId = String(getEnumValueFromKey(DomainEnum, domainT)).padStart(3, '0');
+        const taskId = String(getEnumValueFromKey(TaskEnum, taskT)).padStart(3, '0');
+        const taskTypeId = String(getEnumValueFromKey(TaskTypeEnum, taskTypeT)).padStart(2, '0');
 
         return `${domainId}-${taskId}-${taskTypeId}`;
     }
@@ -43,11 +43,28 @@ export namespace TaskId {
             taskType: taskType as string
         };
     }
+
+    export function generateTaskId(): string[] {
+        const codes: string[] = [];
+    
+        // Object.keys에서 문자열 키만 필터링
+        const domainKeys = Object.keys(DomainEnum).filter(key => isNaN(Number(key)));
+        const taskKeys = Object.keys(TaskEnum).filter(key => isNaN(Number(key)));
+        const taskTypeKeys = Object.keys(TaskTypeEnum).filter(key => isNaN(Number(key)));
+    
+        for(const domain of domainKeys) {
+            for(const task of taskKeys) {
+                for(const taskType of taskTypeKeys) {
+                    // 숫자 값으로 변환하여 사용
+                    const domainId = String(DomainEnum[domain]).padStart(3, '0');
+                    const taskId = String(TaskEnum[task]).padStart(3, '0');
+                    const taskTypeId = String(TaskTypeEnum[taskType]).padStart(2, '0');
+                    const code = `${domainId}-${taskId}-${taskTypeId}`
+                    codes.push(code);
+                }
+            }
+        }
+    
+        return codes;
+    }
 }
-
-// 함수 사용 예시
-const taskId = TaskId.convertToTaskId('ServiceA', 'functionA', 'TRIGGER'); // '001-001-02'
-// 001-001-02
-
-const components = TaskId.convertFromTaskId('001-001-02');
-// { domain: 'ServiceA', task: 'processRT', taskType: 'TRIGGER' }
