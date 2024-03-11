@@ -11,6 +11,7 @@ import { ManagerModule } from './manager-sys/manager/manager.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServiceAModule } from './domains/service-a/service-a.module';
 import { StatisticModule } from './manager-sys/statistic/statistic.module';
+import { WsPullModule } from './ws/pull/ws.pull.module';
 
 const YAML_PATH = path.resolve(__dirname, '../api.swagger.yaml')
 const apiDocument = YAML.parse(fs.readFileSync(YAML_PATH, 'utf8'))
@@ -19,6 +20,7 @@ const apiDocument = YAML.parse(fs.readFileSync(YAML_PATH, 'utf8'))
   imports: [
     /* Global Modules */
     /* System Modules */
+    WsPullModule,
     ManagerModule,
     LogModule,
     StatisticModule,

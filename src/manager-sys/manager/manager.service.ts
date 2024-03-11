@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { Log } from "../types/log";
 import { LogCache } from "../log/log.cache";
-import { ManagerGateway } from "./manager.gateway";
 import { ManagerQueue } from "./manager.queue";
 import { Task } from "../types/task";
 import { TaskId } from "../types/taskId";
+import { WsPushGateway } from "src/ws/push/ws.push.gateway";
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class ManagerService {
 
     constructor(
         private readonly queue: ManagerQueue,
-        private readonly wsGateway: ManagerGateway,
+        private readonly wsGateway: WsPushGateway,
         private readonly logCache: LogCache,
     ) {
         this.init();
@@ -29,9 +29,9 @@ export class ManagerService {
                 taskId: id,
                 contextId: null,
                 status: Task.Status.TERMINATED,
-                updatedAt: Date.now(),
-                startAt: 0,
-                endAt: 0
+                updatedAt: null,
+                startAt: null,
+                endAt: null
             });
         })
 
@@ -115,6 +115,13 @@ export class ManagerService {
                 workStates: null,
             }
         )
+    }
+
+    public getInitialStates() {
+        return {
+            taskStates: this.taskStates,
+            workStates: null,
+        }
     }
 
     private getTaskState(taskId: string) {
