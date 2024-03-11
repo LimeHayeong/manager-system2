@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Log } from "../types/log";
-import { LogService } from "../log/log.service";
+import { LogCache } from "../log/log.cache";
 import { ManagerGateway } from "./manager.gateway";
 import { ManagerQueue } from "./manager.queue";
 import { Task } from "../types/task";
@@ -15,7 +15,7 @@ export class ManagerService {
     constructor(
         private readonly queue: ManagerQueue,
         private readonly wsGateway: ManagerGateway,
-        private readonly logService: LogService
+        private readonly logCache: LogCache,
     ) {
         this.init();
     }
@@ -67,8 +67,8 @@ export class ManagerService {
         
         const log = this.createLog(taskId, contextId, Log.Level.INFO, { message: 'Task started' }, dateNow);
 
-        // Log transport
-        this.transport(log);
+        // Log transportLog
+        this.transportLog(log);
 
         // WS Task 상태 업데이트
         this.wsGateway.emitTaskStateUpdate(
@@ -87,7 +87,7 @@ export class ManagerService {
         // 로그 생성
         const log = this.createLog(taskId, currentTask.contextId, level, data, dateNow);
 
-        this.transport(log);
+        this.transportLog(log);
     }
 
     public async endTask(taskId: string, workId?: string) {
@@ -106,7 +106,7 @@ export class ManagerService {
 
         const log = this.createLog(taskId, currentTask.contextId, Log.Level.INFO, { message: 'Task ended' }, dateNow);
 
-        this.transport(log);
+        this.transportLog(log);
 
         // WS Task 상태 업데이트
         this.wsGateway.emitTaskStateUpdate(
@@ -124,7 +124,7 @@ export class ManagerService {
     }
 
     private genContextHeader(workId: string): string {
-        return workId ? 'wt-' + uuid() : 'w0-' + uuid()
+        return workId ? 'wt-' + uuid() : '0t-' + uuid()
     }
 
     private createLog(taksId: string, contextId: string, level: Log.Level, data: Log.IContext, timestamp: number): Log.Log {
@@ -137,13 +137,14 @@ export class ManagerService {
         }
     }
 
-    private transport(log: Log.Log) {
+    private transportLog(log: Log.Log) {
         // batchQueue에 넣기
         if(log.level !== Log.Level.INFO || log.data.message === 'start' || log.data.message === 'end'){
             this.queue.pushConsole(log);
         }
         this.queue.pushLog(log);
 
-        // Log service 실시간 로그 저장
+        // Log cache에 실시간 로그 저장
+        this.logCache.pushLog(log.taskId, log);
     }
 }

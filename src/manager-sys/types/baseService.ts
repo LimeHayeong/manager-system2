@@ -1,4 +1,4 @@
-import { InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { ConflictException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 
 import { ClsService } from "nestjs-cls";
 import { Log } from "./log";
@@ -86,6 +86,9 @@ export abstract class BaseService {
 
         if(this.manager.isValidTask(taskId)){
             throw new NotFoundException(`${taskId} not found`)
+        }
+        if(this.manager.isRunning(taskId)){
+            throw new ConflictException(`${taskId} is already running`)
         }
         if(typeof this[task] === 'function'){
             this[task](taskType);

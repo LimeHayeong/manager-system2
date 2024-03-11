@@ -18,4 +18,8 @@ export namespace Log {
       chain?: string;
       stack?: string[];
     }
+
+    export interface LogCache {
+        [taskId: string]: Log[];
+    }
 }

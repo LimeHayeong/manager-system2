@@ -1,9 +1,8 @@
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-
 import { CustomInterceptor } from '../global.interceptor';
+import { Server } from 'socket.io';
 import { TaskStatesDTO } from './dto/task-states.dto';
 import { UseInterceptors } from '@nestjs/common';
+import { WebSocketGateway } from '@nestjs/websockets';
 import { WebSocketResponse } from '../types/ws.response';
 import { baseGateway } from '../types/baseGateway';
 import { v4 as uuid } from 'uuid'

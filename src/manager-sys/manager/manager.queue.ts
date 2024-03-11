@@ -64,9 +64,9 @@ export class ManagerQueue {
 
     private async flushConsoleBuffer() {
         try {
-            this.consoleBuffer.map(log => {
-                console.log(log);
-            })
+            // this.consoleBuffer.map(log => {
+            //     console.log(log);
+            // })
             this.consoleBuffer = [];
         } catch (e) {
             console.error('[System] 콘솔 플러시 중 오류 발생: ', e)
