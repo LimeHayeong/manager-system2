@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 
-import { ExeStatisticSchema, TimeStatisticSchema } from './schemas/statistic.schema'
+import { ExeStatisticSchema, MetaSchema, TimeStatisticSchema } from './schemas/statistic.schema'
 
 import { LogSchema } from './schemas/log.schema'
 
@@ -26,6 +26,11 @@ export const modelsProviders = {
     timeStatisticModel: {
         provide: 'TIME_STATISTIC_MODEL',
         useFactory: (connection: mongoose.Connection) => connection.model('TimeStatistic', TimeStatisticSchema),
+        inject: ['DATABASE_CONNECTION'],
+    },
+    metaModel: {
+        provide: 'META_MODEL',
+        useFactory: (connection: mongoose.Connection) => connection.model('Meta', MetaSchema),
         inject: ['DATABASE_CONNECTION'],
     }
 }

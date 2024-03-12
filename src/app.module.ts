@@ -10,6 +10,9 @@ import { LogModule } from './manager-sys/log/log.module';
 import { ManagerModule } from './manager-sys/manager/manager.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServiceAModule } from './domains/service-a/service-a.module';
+import { ServiceBModule } from './domains/service-b/service-b.module';
+import { ServiceCModule } from './domains/service-c/service-c.module';
+import { ServiceDModule } from './domains/service-d/service-d.module';
 import { StatisticModule } from './manager-sys/statistic/statistic.module';
 import { WsPullModule } from './ws/pull/ws.pull.module';
 
@@ -30,6 +33,9 @@ const apiDocument = YAML.parse(fs.readFileSync(YAML_PATH, 'utf8'))
     /* Domain Modules */
     
     ServiceAModule,
+    ServiceBModule,
+    ServiceCModule,
+    ServiceDModule
   ],
   controllers: [],
   providers: [AppService],
