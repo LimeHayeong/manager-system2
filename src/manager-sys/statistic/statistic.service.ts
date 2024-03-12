@@ -56,17 +56,20 @@ export class StatisticService {
                 const timePipe = timeStatAggregationPipeline(firstId, lastId);
                 const exePipe = exeStatAggregationPipeline(firstId, lastId);
 
+                // TODO: async하게 진행.
                 const timeStats = await this.logModel.aggregate(timePipe);
-                // console.log(timeStats[0], timeStats[timeStats.length - 1])
                 const exeStats = await this.logModel.aggregate(exePipe);
+                // console.log(timeStats[0], timeStats[timeStats.length - 1])
                 // console.log(exeStats[0], exeStats[exeStats.length - 1])
 
-                await this.timeStatisticModel.bulkWrite(
-                    timeStatisticOps(timeStats)
-                )
-                await this.exeStatisticModel.bulkWrite(
-                    exeStatisticOps(exeStats)
-                )
+                await Promise.all([
+                    this.timeStatisticModel.bulkWrite(
+                        timeStatisticOps(timeStats)
+                    ),
+                    this.exeStatisticModel.bulkWrite(
+                        exeStatisticOps(exeStats)
+                    )
+                ])
 
                 await this.metaModel.updateOne({}, { lastStatisticId: lastId });
                 // console.log('Aggregation completed! ', lastId);

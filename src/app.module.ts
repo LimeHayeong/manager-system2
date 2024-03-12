@@ -6,6 +6,7 @@ import * as swaggerUi from 'swagger-ui-express'
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 
 import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config'
 import { LogModule } from './manager-sys/log/log.module';
 import { ManagerModule } from './manager-sys/manager/manager.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -21,6 +22,10 @@ const apiDocument = YAML.parse(fs.readFileSync(YAML_PATH, 'utf8'))
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env'
+    }),
     /* Global Modules */
     /* System Modules */
     WsPullModule,
