@@ -21,7 +21,7 @@ export class DomainASecondService extends BaseService implements OnModuleInit{
     }
 
     async onModuleInit() {
-        await this.processRT();
+        // await this.processRT();
     }
 
     @Cron('0/20 * * * * *')

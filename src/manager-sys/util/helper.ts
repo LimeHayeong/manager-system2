@@ -98,7 +98,7 @@ export namespace Helper {
                 }
             } catch (e) {
                 // for test
-                console.error(e);
+                console.error(e.message);
                 throw e;
             }
         };

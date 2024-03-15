@@ -1,23 +1,26 @@
 export interface ViExeRequestDTO {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
+    exeType: string;
     pointNumber: number;
     pointSize: number;
 }
 
 export interface ViTimeRequestDTO {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
+    exeType: string;
     pointNumber: number;
     unitTime:  '30m' | '1h' | '4h' | '6h' |  '12h' | '24h';
 }
 
 export interface ViExeResultDTO {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
+    exeType: string;
     pointNumber: number;
     pointSize: number;
     data: any;
@@ -25,7 +28,7 @@ export interface ViExeResultDTO {
 
 export interface ViExeData {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
-    
+    exeType: string;
 }

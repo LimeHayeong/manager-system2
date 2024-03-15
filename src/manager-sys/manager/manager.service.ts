@@ -43,8 +43,12 @@ export class ManagerService {
     public async buildTask(context: TaskId.context): Promise<boolean> {
         const { taskId, exeType } = context;
         const currentTask = this.getTaskState(taskId);
-        if(!currentTask) return false;
-        if(currentTask.status === Task.Status.PROGRESS) return false;
+        if(!currentTask) {
+            throw new Error('Invalid task');
+        }
+        if(currentTask.status === Task.Status.PROGRESS) {
+            throw new Error('Task is already running');
+        }
         return true;
     }
 

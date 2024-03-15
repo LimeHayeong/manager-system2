@@ -48,7 +48,7 @@ export class StatisticService {
             }
 
             while(true){
-                const logs = await this.logModel.find(lastId ? { _id: { $gt: lastId } } : {}).sort({_id: 1}).limit(aggregationBatchSize).exec();
+                const logs = await this.logModel.find(lastId ? { _id: { $gt: lastId } } : {}).sort({_id: 1}).limit(this.aggregationBatchSize).exec();
 
                 if(logs.length === 0) break;
 

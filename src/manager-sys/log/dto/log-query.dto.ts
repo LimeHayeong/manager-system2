@@ -10,6 +10,11 @@ export interface RecentLogQueryDTO {
     limit?: number;
 }
 
+// TODO: 수정해야함.
+export interface LogResponseDTO extends LogResultDTO{
+    filteringOptions: any;
+}
+
 export interface LogResultDTO {
     page: number;
     limit: number;
@@ -21,6 +26,13 @@ export interface ResultLog extends Omit<Log.Log, 'taskId'> {
     domain: string;
     service: string;
     task: string;
+}
+
+// TODO: 하드코딩 고치기
+export const FilteringOptions = {
+    exeTypes: [ 'CRON', 'TRIGGER', 'WORK'],
+    levels: [ 'INFO', 'WARN', 'ERROR'],
+    chains: [],
 }
 
 export interface LogQuerybyTaskIdDTO extends QueryOptions {

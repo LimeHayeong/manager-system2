@@ -1,150 +1,79 @@
 @URL = 127.0.0.1
 @PORT = 3001
-### hi
-
-### GRID
-GET http://{{URL}}:{{PORT}}/manager/grid?blockNumber=4 HTTP/1.1
-### GRID-default
-GET http://{{URL}}:{{PORT}}/manager/grid HTTP/1.1
-
-### Linechart
-GET http://{{URL}}:{{PORT}}/manager/linechart HTTP/1.1
-
-### Histogram
-GET http://{{URL}}:{{PORT}}/manager/histogram?domain=ServiceA&task=processRT&taskType=CRON HTTP/1.1
-
-### TEST
-GET http://{{URL}}:{{PORT}}/manager/test HTTP/1.1
-
-### 전범위 조회.
-GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&domain=ServiceA&task=processRT&taskType=CRON HTTP/1.1
-
-### 전범위 조회의 pagination
-GET http://{{URL}}:{{PORT}}/manager/logs?domain=ServiceA&task=processRT&taskType=CRON&pageNumber=1&pageDate=2024-02-26-17&pageStartLine=102 HTTP/1.1
-
-### graph 1시간치 조회
-GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&domain=ServiceA&task=processRT&taskType=CRON&from=1709186400002&to=1709189999013 HTTP/1.1
-
-### ContextId로 조회
-GET http://{{URL}}:{{PORT}}/manager/logs?initial=true&contextId=37213f44-3af4-48e9-8a58-c89ae371911e HTTP/1.1
-
-### grid 1개치 조회
-
-### Set files
-GET http://{{URL}}:{{PORT}}/manager/setfiles HTTP/1.1
-
-### Sample work trigger.
-POST http://{{URL}}:{{PORT}}/sampleWork/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "work": "sampleWork",
-    "workType": "TRIGGER"
-}
-
-### Service A Trigger.
-POST http://{{URL}}:{{PORT}}/serviceA/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceA",
-    "task": "processRT",
-    "taskType": "TRIGGER"
-}
-
-### Service A Activator.
-POST http://{{URL}}:{{PORT}}/serviceA/activate HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceA",
-    "task": "processRT",
-    "taskType": "CRON",
-    "active": false
-}
-
-### Service B Trigger.
-POST http://{{URL}}:{{PORT}}/serviceB/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceB",
-    "task": "processRT",
-    "taskType": "TRIGGER"
-}
-
-### Service B Activator.
-POST http://{{URL}}:{{PORT}}/serviceB/activate HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceB",
-    "task": "processRT",
-    "taskType": "TRIGGER",
-    "active": true
-}
-
-### Service C Trigger.
-POST http://{{URL}}:{{PORT}}/serviceC/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceC",
-    "task": "processRT",
-    "taskType": "TRIGGER"
-}
-
-### Service C Activator.
-POST http://{{URL}}:{{PORT}}/serviceC/activate HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceC",
-    "task": "processRT",
-    "taskType": "TRIGGER",
-    "active": true
-}
-
-### Service C Helper Trigger.
-POST http://{{URL}}:{{PORT}}/serviceC/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceC",
-    "task": "processHelper",
-    "taskType": "TRIGGER"
-}
-
-### Service C Activator.
-POST http://{{URL}}:{{PORT}}/serviceC/activate HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceC",
-    "task": "processHelper",
-    "taskType": "TRIGGER",
-    "active": true
-}
-
-### Service D Trigger.
-POST http://{{URL}}:{{PORT}}/serviceD/start HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceD",
-    "task": "processRT",
-    "taskType": "TRIGGER"
-}
-
-### Service D Activator.
-POST http://{{URL}}:{{PORT}}/serviceD/activate HTTP/1.1
-Content-Type: application/json; charset=UTF-8
-
-{
-    "domain": "ServiceD",
-    "task": "processRT",
-    "taskType": "TRIGGER",
-    "active": true
-}
 
 
+#####################################################
+################## Controller test ##################
+#####################################################
+
+
+
+#####################################################
+#################### Query test #####################
+#####################################################
+
+### Histogram page에서 최근 Log 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA HTTP/1.1
+
+### DominA-FirstService 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService HTTP/1.1
+
+### DomainA-SecondService 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=SecondService HTTP/1.1
+
+### 특정 taskId 1개 전 꺼 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT HTTP/1.1
+
+### 특정 taskId 2개 전 꺼 2page 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT&beforeCount=2&page=2 HTTP/1.1
+
+### 특정 taskId 2개 전 꺼 3page 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT&beforeCount=2&page=3 HTTP/1.1
+
+
+
+### Detail Log page에서 Log query
+
+### taskId 전범위 검색
+
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### taskId 전범위 검색, level error
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### taskId 전범위 검색, level error, warn
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### taskId 전범위 검색, 특정 체인 2개, level error, warn
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### taskId 전범위 검색, 특정 체인 2개, level error, warn (병렬처리)
+GET http://{{URL}}:{{PORT}}/log/test?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### taskId 전범위 검색 특정 체인 1개
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
+
+
+
+### taskId 전범위 검색 특정 체인 2개 포함 30번째 page
+GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000&chain=Chain_16&chain=Chain_0&page=30 HTTP/1.1
+
+
+### contextId 전범위 검색 1
+GET http://{{URL}}:{{PORT}}/log?queryType=contextId&contextId=0t-ba3281ec-7f11-42df-b62d-8a78c54a8570&from=1710000000000&to=1711000000000 HTTP/1.1
+
+### contextId 전범위 검색 2
+GET http://{{URL}}:{{PORT}}/log?queryType=contextId&contextId=1234&from=1710000000000&to=1711000000000 HTTP/1.1
+
+
+###
+
+###
+
+###
+
+###
+
+#####################################################
+#################### Statistic test #################
+#####################################################

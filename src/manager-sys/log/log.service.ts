@@ -3,10 +3,11 @@ import { ILogDoc } from '../database/dto/log.interface';
 import { Model } from 'mongoose';
 import { IExeStatisticDoc } from '../database/dto/statistic.interface';
 import { TaskId } from '../types/taskId';
-import { LogQuerybyContextIdData, LogQuerybyTaskIdData, LogResultDTO, RecentLogQueryDTO } from './dto/log-query.dto';
+import { FilteringOptions, LogQuerybyContextIdData, LogQuerybyTaskIdData, LogResultDTO, RecentLogQueryDTO } from './dto/log-query.dto';
 import { Helper } from '../util/helper';
+import { timestamp } from 'rxjs';
 
-const difference = 1000 * 60 * 60 * 1;
+const difference: number = 1000 * 60 * 60 * 1;
 
 @Injectable()
 export class LogService implements OnModuleInit {
@@ -19,22 +20,22 @@ export class LogService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        await this.getRecentLogs({
-            domain: 'DomainA',
-            service: 'SecondService',
-            exeType: 'CRON',
-        });
-        await this.getLogsByTaskId({
-            domain: 'DomainA',
-            chain: ['Chain_52', 'Chain_35'],
-            from: 0,
-            to: 2000000000000,
-        })
-        await this.getLogByContextIds({
-            contextId: ['0t-d5b9c90c-5d35-4b54-acdb-f237b03cf2bc', '0t-30690c27-5b6f-4a0c-8b3a-d7d8cf6dcc94'],
-            from: 0,
-            to: 2000000000000,
-        });
+        // await this.getRecentLogs({
+        //     domain: 'DomainA',
+        //     service: 'SecondService',
+        //     exeType: 'CRON',
+        // });
+        // await this.getLogsByTaskId({
+        //     domain: 'DomainA',
+        //     chain: ['Chain_52', 'Chain_35'],
+        //     from: 0,
+        //     to: 2000000000000,
+        // })
+        // await this.getLogByContextIds({
+        //     contextId: ['0t-d5b9c90c-5d35-4b54-acdb-f237b03cf2bc', '0t-30690c27-5b6f-4a0c-8b3a-d7d8cf6dcc94'],
+        //     from: 0,
+        //     to: 2000000000000,
+        // });
     }
 
     @Helper.ExecutionTimerAsync
@@ -71,11 +72,13 @@ export class LogService implements OnModuleInit {
 
         // console.log(targetDoc)
         const conditions2 = {}
-        if('exeType'){
-            conditions2['exeType'] = { $in: exeType };
+        if(exeType){
+            conditions2['exeType'] = typeof exeType === 'string' ? exeType : { $in: exeType };
         }
         conditions2['contextId'] = targetDoc.contextId;
         conditions2['timestamp'] = { $gte: targetDoc.startAt, $lte: targetDoc.endAt };
+
+        console.log(conditions2)
 
         const totalCount = await this.logModel.countDocuments(conditions2);
 
@@ -99,9 +102,9 @@ export class LogService implements OnModuleInit {
         // logs.forEach(log => console.log(log));
 
         return {
-            page: page,
-            limit: limit,
-            totalCount: totalCount,
+            page: page as number,
+            limit: limit as number,
+            totalCount: totalCount as number,
             logs: logs
         }
     }
@@ -111,6 +114,7 @@ export class LogService implements OnModuleInit {
     @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
     public async getLogsByTaskId(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
+        // console.log(query)
         const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
         const conditions = {};
@@ -130,15 +134,19 @@ export class LogService implements OnModuleInit {
         if(from && to){
             conditions['timestamp'] = { $gte: from, $lte: to };
         }
-        if(exeType){
-            conditions['exeType'] = { $in: exeType };
+        if (exeType) {
+            conditions['exeType'] = typeof exeType === 'string' ? exeType : { $in: exeType };
         }
-        if(level){
-            conditions['level'] = { $in: level };
+
+        if( level ) {
+            conditions['level'] = typeof level === 'string' ? level : { $in: level };
         }
-        if(chain){
-            conditions['data.chain'] = { $in: chain };
+
+        if( chain ) {
+            conditions['data.chain'] = typeof chain === 'string' ? chain : { $in: chain };
         }
+
+        // console.log(conditions)
 
         const totalCountPromise = this.logModel.countDocuments(conditions);
         const logsPromise = this.logModel
@@ -165,9 +173,118 @@ export class LogService implements OnModuleInit {
 
         // 결과 및 총 개수 반환
         return {
-            page: page,
-            limit: limit,
-            totalCount: totalCount,
+            page: page as number, 
+            limit: limit as number,
+            totalCount: totalCount as number,
+            logs: logs
+        };
+    }
+
+    @Helper.ExecutionTimerAsync
+    @Helper.SimpleErrorHandling
+    public async getLogsByTaskIdAdvanced(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
+        console.log(query)
+        const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
+
+        const conditions = {};
+
+        if(domain && service && task){
+            const taskIds = this.generateTaskIdCombinations(domain, service, task);
+            conditions['taskId'] = { $in: taskIds };
+        } else if( domain && service){
+            const taskId = TaskId.convertToTaskId(domain, service, null);
+            const regex = TaskId.createRegexFromTaskId(taskId);
+            conditions['taskId'] = { $regex: regex };
+        } else if(domain) {
+            const taskId = TaskId.convertToTaskId(domain, null, null);
+            const regex = TaskId.createRegexFromTaskId(taskId);
+            conditions['taskId'] = { $regex: regex };
+        }
+        if(from){
+            conditions['startAt'] = { $gte: Number(from) - Number(difference) };
+        }
+
+        console.log(conditions)
+
+        const exeStats = await this.exeStatisticModel
+            .find(conditions)
+            .sort({ startAt: -1 })
+            .select('taskId startAt endAt')
+            .lean()
+            .exec();
+
+        const conditions3 = [];
+        const timestamps = exeStats.map((exeStat) => 
+            ({ $gte: exeStat.startAt, $lte: exeStat.endAt }));
+        console.log(timestamps);
+
+        
+
+        const conditions2 = {};
+        const flattenedTaskIds = exeStats.flatMap((exeStat) => exeStat.taskId);
+        const uniqueTaskIds = [...new Set(flattenedTaskIds)];
+        // console.log(uniqueTaskIds)
+        if(uniqueTaskIds){
+            conditions2['taskId'] = typeof uniqueTaskIds === 'string' ? uniqueTaskIds : { $in: uniqueTaskIds };
+        }
+    
+
+        if (exeType) {
+            conditions2['exeType'] = typeof exeType === 'string' ? exeType : { $in: exeType };
+        }
+        if (level) {
+            conditions2['level'] = typeof level === 'string' ? level : { $in: level };
+        }
+        if (chain) {
+            conditions2['data.chain'] = typeof chain === 'string' ? chain : { $in: chain };
+        }
+        console.log(conditions2)
+
+        const conditionsList = timestamps.map((t) => {
+            return {
+                ...conditions2,
+                timestamp: t,
+            }
+        })
+
+        // console.log(conditionsList)
+
+        const logsPromises = conditionsList.map((condition) => {
+            return this.logModel
+                .find(condition)
+                .sort({ timestamp: -1 })
+                .select('taskId contextId exeType level data timestamp')
+                .lean()
+                .exec()
+        })
+
+
+        const [ ...queryData ] = await Promise.all([ ...logsPromises]);
+        // console.log(queryData);
+        const totalCount = queryData.reduce((acc, cur) => acc + cur.length, 0);
+        const Alllogs = queryData.flat();
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const logsForPage = Alllogs.slice(startIndex, endIndex);
+
+
+        const logs = logsForPage.map((log) => {
+            const { _id, ...remain } = log;
+            const { domain, service, task } = TaskId.convertFromTaskId(log.taskId);
+            return { domain, service, task, ...remain };
+        })
+
+        // console.log(totalCount)
+        // logs.forEach(log => console.log(log));
+        // console.log(logs.length);
+        
+
+        // 결과 및 총 개수 반환
+        return {
+            page: page as number, 
+            limit: limit as number,
+            totalCount: totalCount as number,
             logs: logs
         };
     }
@@ -178,10 +295,14 @@ export class LogService implements OnModuleInit {
         const { contextId, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
         const conditions = {};
-        conditions['contextId'] = { $in: contextId };
+        if(contextId){
+            conditions['contextId'] = typeof contextId === 'string' ? contextId : { $in: contextId };
+        }
+        
 
+        const startAt: number = from - Number(difference);
         if(from && to){
-            conditions['timestamp'] = { $gte: from - difference, $lte: to + difference};
+            conditions['startAt'] = { $gte: startAt };
         }
 
         const exeStats = await this.exeStatisticModel
@@ -191,7 +312,7 @@ export class LogService implements OnModuleInit {
             .lean()
             .exec();
 
-        // console.log(exeStats);
+        console.log(exeStats);
 
         const conditions2 = {}
 
@@ -203,14 +324,14 @@ export class LogService implements OnModuleInit {
             ...exeStats.map((exeStat) => exeStat.startAt)),
             $lte: Math.max(...exeStats.map((exeStat) => exeStat.endAt),
         )};
-        if(exeType){
-            conditions2['exeType'] = { $in: exeType };
+        if (exeType) {
+            conditions['exeType'] = typeof exeType === 'string' ? exeType : { $in: exeType };
         }
-        if(level){
-            conditions2['level'] = { $in: level };
+        if (level) {
+            conditions['level'] = typeof level === 'string' ? level : { $in: level };
         }
-        if(chain){
-            conditions2['data.chain'] = { $in: chain };
+        if (chain) {
+            conditions['data.chain'] = typeof chain === 'string' ? chain : { $in: chain };
         }
     
         const queryData = await this.logModel
@@ -229,10 +350,10 @@ export class LogService implements OnModuleInit {
         })
 
         return {
-            page: page,
-            limit: limit,
-            totalCount: logs.length,
-            logs: logs
+            page: page as number,
+            limit: limit as number ,
+            totalCount: logs.length as number ,
+            logs: logs,
         }
     }
 
@@ -241,7 +362,7 @@ export class LogService implements OnModuleInit {
     private generateTaskIdCombinations(domain: string, service: string, tasks: string[]): string[] {
         const taskIdCombinations = [];
 
-        if(tasks != null){
+        if(tasks.length > 1){
             tasks.forEach((task) => {
                 const taskId = TaskId.convertToTaskId(domain, service, task);
                 taskIdCombinations.push(taskId);
@@ -250,6 +371,5 @@ export class LogService implements OnModuleInit {
     
         return taskIdCombinations;
     }
-     
 }
 
