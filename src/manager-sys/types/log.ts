@@ -1,3 +1,5 @@
+import { Task } from "./task";
+
 export namespace Log {
     export enum Level {
         INFO = 'INFO',
@@ -9,6 +11,7 @@ export namespace Log {
         taskId: string;
         contextId: string;
         level: Level;
+        exeType: Task.ExecutionType
         data: IContext | null;
         timestamp: number; // toISOString
     }
@@ -20,6 +23,6 @@ export namespace Log {
     }
 
     export interface LogCache {
-        [taskId: string]: Log[];
+        [key: string]: Log[];
     }
 }

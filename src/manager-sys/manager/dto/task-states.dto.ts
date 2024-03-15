@@ -8,8 +8,9 @@ export class TaskStatesDTO {
 
 export class DeSerializedTaskState {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
+    exeType: string;
     contextId: string;
     status: Task.Status;
     updatedAt: number;

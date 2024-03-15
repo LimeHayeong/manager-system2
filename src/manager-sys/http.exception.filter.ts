@@ -23,7 +23,8 @@ import { Response } from 'express'
       const errorResponse: ApiError = {
         code: status,
         payload: {
-            message: err.message,
+            message: err.message ? err.message : null,
+            error: err.error ? err.error : null
         }
       }
   

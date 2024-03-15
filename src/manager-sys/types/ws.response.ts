@@ -1,18 +1,18 @@
 export interface WebSocketResponse {
-  code: number | null
+  code: number
   responseId: string
   payload: {
       message: string | null
-      data?: any | null
+      data: any | null
   }
 }
   
 export interface WebSocketError {
-  code: number | null
+  code: number
   responseId: string;
   payload: {
       message: string | null
-      error?: string | string[] | null
+      error: string | string[] | null
   }
 }
 

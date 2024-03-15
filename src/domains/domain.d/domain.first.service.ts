@@ -10,7 +10,7 @@ import { ManagerService } from 'src/manager-sys/manager/manager.service';
 import { delay } from 'src/manager-sys/util/delay';
 
 @Injectable()
-export class ServiceDService extends BaseService {
+export class DomainDFirstService extends BaseService {
     constructor(
         protected readonly manager: ManagerService,
         protected readonly cls: ClsService
@@ -19,7 +19,7 @@ export class ServiceDService extends BaseService {
     }
 
     @Cron('0 */5 * * * *')
-    @UseCls(Helper.clsBuilder('ServiceD', 'processRT'))
+    @UseCls(Helper.clsBuilder('DomainD', 'FirstService', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         const chains = Array.from({ length: 5000 }, (_, i) => `Chain_${i + 1}`);

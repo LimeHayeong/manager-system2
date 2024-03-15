@@ -10,10 +10,10 @@ export namespace Helper {
         }
     }
 
-    export function clsBuilder(domain: string, task: string) {
+    export function clsBuilder(domain: string, service: string, task: string) {
         return {
             setup: (cls) => {
-                cls.set('context', {domain, task});
+                cls.set('context', {domain, service, task});
             }
         }
     }
@@ -51,22 +51,23 @@ export namespace Helper {
         descriptor.value = async function(...args: any[]) {
             try {
                 // DEFAULT: CRON
-                let context = 'CRON';
+                let exeType = 'CRON';
                 if (args.length > 0 && args[0]) {
-                    context = args[0]; // 첫 번째 인자로 context가 제공되면 해당 값을 사용
+                    exeType = args[0]; // 첫 번째 인자로 context가 제공되면 해당 값을 사용
                 }
 
                 // context에 따라 cls 상태 업데이트
                 
                 const taskIdentity = {
                     domain: this.cls.get('context').domain,
+                    service: this.cls.get('context').service,
                     task: this.cls.get('context').task,
-                    taskType: context
+                    exeType: exeType
                 };
 
-                const taskId = TaskId.convertToTaskId(taskIdentity.domain, taskIdentity.task, taskIdentity.taskType );
+                const taskId = TaskId.convertToTaskId(taskIdentity.domain, taskIdentity.service, taskIdentity.task );
 
-                this.cls.set('context', taskId)
+                this.cls.set('context', { taskId, exeType })
 
                 // manager.build 호출
                 if(await this.manager.buildTask(this.cls.get('context'))){
@@ -132,6 +133,18 @@ export namespace Helper {
                 throw e;
             } finally {
                 console.timeEnd(propertyName);
+            }
+        }
+        return descriptor;
+    }
+
+    export function SimpleErrorHandling(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = async function(...args: any[]) {
+            try {
+                return await originalMethod.apply(this, args);
+            } catch (e) {
+                console.error(e);
             }
         }
         return descriptor;

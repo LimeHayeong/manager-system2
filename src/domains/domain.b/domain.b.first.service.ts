@@ -39,7 +39,7 @@ const chains = ['Chain_33',
 'Chain_57']
 
 @Injectable()
-export class ServiceBService extends BaseService {
+export class DomainBFirstService extends BaseService {
     constructor(
         protected readonly manager: ManagerService,
         protected readonly cls: ClsService
@@ -48,7 +48,7 @@ export class ServiceBService extends BaseService {
     }
 
     @Cron('0 */3 * * * *')
-    @UseCls(Helper.clsBuilder('ServiceB', 'processRT'))
+    @UseCls(Helper.clsBuilder('DomainB', 'FirstService', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         await Promise.all(chains.map(async (chain) => {

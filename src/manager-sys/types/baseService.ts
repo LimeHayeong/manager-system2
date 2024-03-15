@@ -3,6 +3,7 @@ import { ConflictException, InternalServerErrorException, NotFoundException } fr
 import { ClsService } from "nestjs-cls";
 import { Log } from "./log";
 import { ManagerService } from "../manager/manager.service";
+import { Task } from "./task";
 import { TaskId } from "./taskId";
 import { TaskStartRequestDTO } from "../common-dto/task-control.dto";
 import { trimErrorStack } from "../util/error";
@@ -19,7 +20,7 @@ export abstract class BaseService {
             message: '',
         }
 
-        const context = this.cls.get('context');
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
@@ -30,7 +31,7 @@ export abstract class BaseService {
 
         const workId = this.cls.get('workId');
 
-        await this.manager.logTask(context, Log.Level.INFO, result, workId);
+        await this.manager.logTask(taskId, Log.Level.INFO, Task.ExecutionType[exeType], result, workId);
     }
 
     protected async warn(data: string, chain?: string){
@@ -38,7 +39,7 @@ export abstract class BaseService {
             message: ''
         };
 
-        const context = this.cls.get('context');
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
@@ -48,7 +49,7 @@ export abstract class BaseService {
         }
 
         const workId = this.cls.get('workId');
-        await this.manager.logTask(context, Log.Level.WARN, result, workId);
+        await this.manager.logTask(taskId, Log.Level.WARN, Task.ExecutionType[exeType], result, workId);
     }
 
     protected async error(data: string | Error,
@@ -63,7 +64,7 @@ export abstract class BaseService {
         else if(errorStack > maxErrorStackLength) errorStack = maxErrorStackLength;
         else if(errorStack < 0) errorStack = ErrorStackLength;
 
-        const context = this.cls.get('context');
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
@@ -76,13 +77,13 @@ export abstract class BaseService {
         }
 
         const workId = this.cls.get('workId');
-        await this.manager.logTask(context, Log.Level.ERROR, result, workId);
+        await this.manager.logTask(taskId, Log.Level.ERROR, Task.ExecutionType[exeType], result, workId);
     }
 
     // HTTP CONTEXT
     async triggerTask(data: TaskStartRequestDTO): Promise<string> {
-        const { domain, task, taskType } = data;
-        const taskId = TaskId.convertToTaskId(domain, task, taskType);
+        const { domain, service, task } = data;
+        const taskId = TaskId.convertToTaskId(domain, service, task);
 
         if(this.manager.isValidTask(taskId)){
             throw new NotFoundException(`${taskId} not found`)
@@ -91,7 +92,7 @@ export abstract class BaseService {
             throw new ConflictException(`${taskId} is already running`)
         }
         if(typeof this[task] === 'function'){
-            this[task](taskType);
+            this[task]('TRIGGER');
             return `${taskId} started`
         }else {
             throw new InternalServerErrorException(`Unknown error`);

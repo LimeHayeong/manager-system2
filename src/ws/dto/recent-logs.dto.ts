@@ -2,8 +2,9 @@ import { Log } from "src/manager-sys/types/log";
 
 export class recentLogsRequestDTO {
     domain: string;
+    service: string;
     task: string;
-    taskType: string;
+    exeType?: string;
     offset: number;
     limit: number;
 }

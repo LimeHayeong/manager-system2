@@ -1,16 +1,16 @@
 export interface ApiResponse {
-    code: number | null
+    code: number
     payload: {
         message: string | null
-        data?: any | null
+        data: any | null
     }
   }
   
   export interface ApiError {
-    code: number | null
+    code: number
     payload: {
         message: string | null
-        error?: string | string[] | null
+        error: string | string[] | null
     }
   }
   

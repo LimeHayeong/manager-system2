@@ -4,6 +4,6 @@ import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 
 @UseFilters(HttpExceptionFilter)
-@Controller('ServiceA')
+@Controller('domain/a')
 @UseInterceptors(CustomInterceptor)
-export class ServiceAController {}
+export class DomainAController {}

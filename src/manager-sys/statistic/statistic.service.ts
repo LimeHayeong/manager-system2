@@ -5,6 +5,8 @@ import { ILogDoc } from '../database/dto/log.interface';
 import { Cron } from '@nestjs/schedule';
 import { exeStatAggregationPipeline, timeStatAggregationPipeline } from '../database/queries/mongodb.aggregate';
 import { exeStatisticOps, timeStatisticOps } from '../database/queries/mongodb.bulkwrite';
+import { TaskId } from '../types/taskId';
+import { ViExeRequestDTO, ViExeResultDTO } from './dto/vi.dto';
 
 const aggregationBatchSize = 10000;
 
@@ -26,12 +28,12 @@ export class StatisticService {
         this.aggregationBatchSize = aggregationBatchSize
         this.staticRunning = false;
 
-        this.getExeStatistic();
+        // this.getExeStatistic();
     }
 
     // 1분마다 통계자료 집계.
     @Cron('0 */1 * * * *')
-    public async getExeStatistic() {
+    private async processStatisticAggregation() {
         if(this.staticRunning) return;
 
         this.staticRunning = true;
@@ -82,4 +84,28 @@ export class StatisticService {
 
         this.staticRunning = false;
     }
+
+    // public async getExeStatistic(domain: string, task: string, taskType: string, pointNumber: number, pointSize: number): Promise<ViExeResultDTO> {
+    //     const taskId = TaskId.convertToTaskId(domain, task, taskType);
+    //     try {
+    //         const data = await this.exeStatisticModel
+    //             .find({ taskId: taskId })
+    //             .sort({ startAt: -1 })
+    //             .limit(pointNumber * pointSize)
+    //             .select('contextId data startAt')
+    //             .lean()
+    //             .exec();
+
+    //         const result = data.map((d) => {
+    //             return {
+                    
+    //             }
+    //         })
+
+    //         return {}
+    //     } catch (e) {
+    //         console.error(e);
+
+    //     }
+    // }
 }

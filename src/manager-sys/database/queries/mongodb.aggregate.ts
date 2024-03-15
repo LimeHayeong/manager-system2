@@ -9,7 +9,7 @@ export function timeStatAggregationPipeline(firstId, lastId) {
                         {
                           $mod: [
                             "$timestamp",
-                            60 * 1000, // 1분
+                            15 * 60 * 1000, // 15분
                           ],
                         },
                       ],

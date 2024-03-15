@@ -5,7 +5,7 @@ import { baseGateway } from "src/manager-sys/types/baseGateway";
 import { Socket } from "socket.io";
 import { recentLogsRequestDTO } from "../dto/recent-logs.dto";
 import { TaskId } from "src/manager-sys/types/taskId";
-import { WebSocketError, WebSocketResponse } from "src/manager-sys/types/ws.response";
+import { WebSocketError, WebSocketResponse, wsError } from "src/manager-sys/types/ws.response";
 import { v4 as uuid } from 'uuid'
 import { LogCache } from "src/manager-sys/log/log.cache";
 import { ManagerService } from "src/manager-sys/manager/manager.service";
@@ -46,12 +46,12 @@ export class WsPullGateway extends baseGateway {
       @ConnectedSocket() client: Socket,
       @MessageBody() data: recentLogsRequestDTO 
     ) {
-      const { domain, task, taskType, offset, limit } = data;
-      const taskId = TaskId.convertToTaskId(domain, task, taskType);
+      const { domain, service, task, exeType, offset, limit } = data;
+      const taskId = TaskId.convertToTaskId(domain, service, task);
   
       let response: WebSocketResponse | WebSocketError;
       try {
-        const logs = this.logCache.getRecentLogs(taskId, offset, limit);
+        const logs = this.logCache.getRecentLogs(taskId, exeType, offset, limit);
         response = {
           code: 200,
           responseId: uuid(),
@@ -62,11 +62,11 @@ export class WsPullGateway extends baseGateway {
         }
       } catch (e) {
         response = {
-          code: e.code || 500,
+          code: e instanceof wsError ? e.code : 500,
           responseId: uuid(),
           payload: {
-            message: e.message,
-            error: e
+            message: e instanceof wsError ? e.message : null,
+            error: e instanceof wsError ? e.stack : null
           }
         }
       }

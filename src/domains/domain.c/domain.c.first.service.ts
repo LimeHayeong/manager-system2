@@ -8,7 +8,7 @@ import { ManagerService } from 'src/manager-sys/manager/manager.service';
 import { delay } from 'src/manager-sys/util/delay';
 
 @Injectable()
-export class ServiceCService extends BaseService {
+export class DomainCFirstService extends BaseService {
     constructor(
         protected readonly manager: ManagerService,
         protected readonly cls: ClsService
@@ -17,7 +17,7 @@ export class ServiceCService extends BaseService {
     }
 
     @Cron('0 * */1 * * *')
-    @UseCls(Helper.clsBuilder('ServiceC', 'processRT'))
+    @UseCls(Helper.clsBuilder('DomainC', 'FirstService', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         await delay(5, 40);

@@ -26,16 +26,7 @@ export class ManagerService {
         this.taskStates = [];
         
         // 초기값 넣기
-        TaskId.generateTaskId().map((id) => {
-            this.taskStates.push({
-                taskId: id,
-                contextId: null,
-                status: Task.Status.TERMINATED,
-                updatedAt: null,
-                startAt: null,
-                endAt: null
-            });
-        })
+        this.generateStates();
 
         console.log('[System] ManagerService initialized');
     }
@@ -49,14 +40,16 @@ export class ManagerService {
     }
 
     // TODO: CRON context에서 에러 전파하려면 여기서 정보를 제공해야함.
-    public async buildTask(taskId: string): Promise<boolean> {
+    public async buildTask(context: TaskId.context): Promise<boolean> {
+        const { taskId, exeType } = context;
         const currentTask = this.getTaskState(taskId);
         if(!currentTask) return false;
         if(currentTask.status === Task.Status.PROGRESS) return false;
         return true;
     }
 
-    public async startTask(taskId: string, workId?: string) {
+    public async startTask(context: TaskId.context, workId?: string) {
+        const { taskId, exeType } = context; 
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
 
@@ -67,7 +60,7 @@ export class ManagerService {
         const contextId = this.genContextHeader(workId)
         currentTask.contextId = contextId
         
-        const log = this.createLog(taskId, contextId, Log.Level.INFO, { message: 'Task started' }, dateNow);
+        const log = this.createLog(taskId, contextId, Log.Level.INFO, Task.ExecutionType[exeType], { message: 'Task started' }, dateNow);
 
         // Log transportLog
         this.transportLog(log);
@@ -76,22 +69,23 @@ export class ManagerService {
         this.wsGateway.emitTaskStateUpdate(this.getDeserializedStates())
     }
 
-    public async logTask(taskId: string, level: Log.Level, data: Log.IContext, workId?: string) {
+    public async logTask(taskId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.IContext, workId?: string) {
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
         currentTask.updatedAt = dateNow;
 
         // 로그 생성
-        const log = this.createLog(taskId, currentTask.contextId, level, data, dateNow);
+        const log = this.createLog(taskId, currentTask.contextId, level, Task.ExecutionType[exeType], data, dateNow);
 
         this.transportLog(log);
     }
 
-    public async endTask(taskId: string, workId?: string) {
+    public async endTask(context: TaskId.context, workId?: string) {
+        const { taskId, exeType } = context;
         const currentTask = this.getTaskState(taskId);
         const dateNow = Date.now();
 
-        if(Number(taskId.slice(-2)) === TaskId.TaskTypeEnum['CRON']){
+        if(exeType === Task.ExecutionType['CRON']){
             // CRON은 waiting.
             currentTask.status = Task.Status.WAITING;
         }else{
@@ -101,7 +95,7 @@ export class ManagerService {
         currentTask.updatedAt = dateNow;
         currentTask.endAt = dateNow;
 
-        const log = this.createLog(taskId, currentTask.contextId, Log.Level.INFO, { message: 'Task ended' }, dateNow);
+        const log = this.createLog(taskId, currentTask.contextId, Log.Level.INFO, Task.ExecutionType[exeType], { message: 'Task ended' }, dateNow);
 
         this.transportLog(log);
 
@@ -115,11 +109,12 @@ export class ManagerService {
 
     private getDeserializedStates(): TaskStatesResponseDTO {
         const taskStates: DeSerializedTaskState[] = this.taskStates.map((state) => {
-            const { task, domain, taskType } = TaskId.convertFromTaskId(state.taskId);
+            const { domain, service, task } = TaskId.convertFromTaskId(state.taskId);
             return {
                 domain: domain,
+                service: service,
                 task: task,
-                taskType: taskType,
+                exeType: state.exeType,
                 contextId: state.contextId,
                 status: state.status,
                 updatedAt: state.updatedAt,
@@ -143,11 +138,12 @@ export class ManagerService {
         return workId ? 'wt-' + uuid() : '0t-' + uuid()
     }
 
-    private createLog(taksId: string, contextId: string, level: Log.Level, data: Log.IContext, timestamp: number): Log.Log {
+    private createLog(taksId: string, contextId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.IContext, timestamp: number): Log.Log {
         return {
             taskId: taksId,
             contextId: contextId,
             level: level,
+            exeType: exeType,
             data: data,
             timestamp: timestamp
         }
@@ -162,5 +158,37 @@ export class ManagerService {
 
         // Log cache에 실시간 로그 저장
         this.logCache.pushLog(log.taskId, log);
+    }
+
+    private generateStates() {
+        TaskId.generateTaskId().map((id) => {
+            this.taskStates.push({
+                taskId: id,
+                exeType: Task.ExecutionType['CRON'],
+                contextId: null,
+                status: Task.Status.TERMINATED,
+                updatedAt: null,
+                startAt: null,
+                endAt: null
+            });
+            this.taskStates.push({
+                taskId: id,
+                exeType: Task.ExecutionType['TRIGGER'],
+                contextId: null,
+                status: Task.Status.TERMINATED,
+                updatedAt: null,
+                startAt: null,
+                endAt: null
+            });
+            this.taskStates.push({
+                taskId: id,
+                exeType: Task.ExecutionType['WORK'],
+                contextId: null,
+                status: Task.Status.TERMINATED,
+                updatedAt: null,
+                startAt: null,
+                endAt: null
+            });
+        })
     }
 }
