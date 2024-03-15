@@ -3,12 +3,16 @@ import { Log } from "src/manager-sys/types/log";
 export interface RecentLogQueryDTO {
     domain: string;
     service?: string;
-    task?: string;
+    task?: string[];
     exeType?: string;
-    number?: number;
+    beforeCount?: number;
+    page?: number;
+    limit?: number;
 }
 
 export interface RecentLogResultDTO {
+    page: number;
+    limit: number;
     logs: ResultLog[][];
 }
 
@@ -19,15 +23,15 @@ export interface ResultLog extends Omit<Log.Log, 'taskId'> {
 }
 
 export interface LogQueryDTO {
-    domain?: string[];
-    service?: string[]
+    domain: string;
+    service?: string;
     task?: string[];
     exeType?: string[];
     contextId?: string[];
-    from?: number;
-    to?: number;
     level?: Log.Level[];
     chain?: string[];
+    from?: number;
+    to?: number;
     page?: number;
     limit?: number;
 }

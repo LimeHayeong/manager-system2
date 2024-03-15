@@ -2,7 +2,6 @@ import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import { LogService } from './log.service';
 import { Request, Response } from 'express';
 import { LogQueryDTO, RecentLogQueryDTO } from './dto/log-query.dto';
-import { TaskId } from '../types/taskId';
 import { ApiResponse } from '../types/api.response';
 
 @Controller('log')
@@ -18,8 +17,7 @@ export class LogController {
         @Res() res: Response,
         @Query() query: RecentLogQueryDTO,
     ) {
-        const { domain, service, task, exeType, number = 3 } = query;
-        const logs = await this.logService.getRecentLogs(domain, service, task, exeType, number);
+        const logs = await this.logService.getRecentLogs(query);
         const response: ApiResponse = {
             code: 200,
             payload: {

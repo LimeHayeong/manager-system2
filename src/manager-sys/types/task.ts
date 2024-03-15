@@ -8,6 +8,7 @@ export namespace Task {
 
     export enum Service {
         FirstService = 1,
+        SecondService,
     }
 
     export enum Task {

@@ -17,7 +17,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { StatisticModule } from './manager-sys/statistic/statistic.module';
 import { WsPullModule } from './ws/pull/ws.pull.module';
 
-const YAML_PATH = path.resolve(__dirname, '../../api.swagger.yaml')
+const YAML_PATH = path.resolve(__dirname, '../api.swagger.yaml')
 const apiDocument = YAML.parse(fs.readFileSync(YAML_PATH, 'utf8'))
 
 @Module({

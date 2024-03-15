@@ -1,63 +1,96 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ILogDoc } from '../database/dto/log.interface';
 import { Model } from 'mongoose';
 import { IExeStatisticDoc } from '../database/dto/statistic.interface';
 import { TaskId } from '../types/taskId';
-import { LogQueryDTO, RecentLogResultDTO } from './dto/log-query.dto';
+import { LogQueryDTO, RecentLogQueryDTO, RecentLogResultDTO } from './dto/log-query.dto';
 import { Helper } from '../util/helper';
 
 @Injectable()
-export class LogService {
+export class LogService implements OnModuleInit {
     constructor(
         @Inject('LOG_MODEL')
         private logModel: Model<ILogDoc>,
         @Inject('EXE_STATISTIC_MODEL')
         private exeStatisticModel: Model<IExeStatisticDoc>,
     ) {
-        // this.getRecentLogs('ServiceA', 'processRT', 'CRON', 3);
-        // this.getLogs({
-        //     domain: ['ServiceA'],
+    }
+
+    async onModuleInit() {
+        await this.getRecentLogs({
+            domain: 'DomainA',
+            service: 'SecondService',
+            exeType: 'CRON',
+        });
+        // await this.getLogs({
+        //     domain: 'DomainA',
         //     chain: ['Chain_52', 'Chain_35'],
         // })
     }
 
-    // TODO: 이것도 pagination 걸어야 하나?
     @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
-    public async getRecentLogs(domain: string, service: string, task:string, exeType: string, number: number): Promise<RecentLogResultDTO> {
-        const taskId = TaskId.convertToTaskId(domain, service, task);
+    public async getRecentLogs(query: RecentLogQueryDTO): Promise<RecentLogResultDTO> {
+        const { domain, service, task, exeType, beforeCount = 1, page = 1, limit = 100 } = query;
+
+
+        const conditions = {};
+        if(domain && service && task){
+            const taskIds = this.generateTaskIdCombinations(domain, service, task);
+            conditions['taskId'] = { $in: taskIds };
+        } else if( domain && service){
+            const taskId = TaskId.convertToTaskId(domain, service, null);
+            const regex = TaskId.createRegexFromTaskId(taskId);
+            conditions['taskId'] = { $regex: regex };
+        } else if(domain) {
+            const taskId = TaskId.convertToTaskId(domain, null, null);
+            const regex = TaskId.createRegexFromTaskId(taskId);
+            conditions['taskId'] = { $regex: regex };
+        }
+
+        // console.log(conditions);
 
         const exeLogs = await this.exeStatisticModel
-            .find({ taskId: taskId})
+            .find(conditions)
             .sort({ startAt: -1 })
-            .limit(number)
+            .skip(beforeCount)
+            .limit(1)
             .select('contextId startAt endAt')
             .lean()
             .exec();
 
-        const logQueries = exeLogs.map(log =>
-            this.logModel
-                .find({ contextId: log.contextId, timestamp: { $gte: log.startAt, $lte: log.endAt }})
-                .sort({ timestamp: -1 })
-                .select('contextId level data timestamp')
-                .lean()
-                .exec()
-        )
+        const targetDoc = exeLogs[0];
 
-        const logsData = await Promise.all(logQueries);
+        // console.log(targetDoc)
+        const conditions2 = {}
+        if('exeType'){
+            conditions2['exeType'] = exeType;
+        }
+        conditions2['contextId'] = targetDoc.contextId;
+        conditions2['timestamp'] = { $gte: targetDoc.startAt, $lte: targetDoc.endAt };
 
-        // 결과 데이터 변환
-        // const result = logsData.map((logs) => {
-        //     return logs.map(log => {
-        //         return { domain, task, taskType, ...log };
-        //     });
-        // });
+        const queryData = await this.logModel
+            .find(conditions2)
+            .sort({ timestamp: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .select('taskId contextId exeType level data timestamp')
+            .lean()
+            .exec()
 
-        // result.forEach(logs => logs.forEach(log => console.log(log)));
-        // result.forEach(logs => console.log(logs[0].timestamp));
+        const logs = queryData.map((log) => {
+            const { domain, service, task } = TaskId.convertFromTaskId(log.taskId);
+            return { domain, service, task, ...log };
+        })
+
+        // console.log(logs.length);
+
+        // logs.forEach(log => console.log(log));
+        // console.log(logs[0].timestamp)
 
         return {
-            // logs: result
+            page: page,
+            limit: limit,
             logs: []
         }
     }
@@ -111,12 +144,12 @@ export class LogService {
             conditions['data.chain'] = { $in: query.chain };
         }
         
-        console.log(conditions)
+        // console.log(conditions)
 
         // 총 문서 개수 조회
         const totalCount = await this.logModel.countDocuments(conditions);
 
-        console.log(totalCount)
+        // console.log(totalCount)
 
         // 문서 조회 및 페이징 처리
         const logs = await this.logModel
@@ -133,36 +166,17 @@ export class LogService {
         };
     }
 
-    private generateTaskIdCombinations(domains: string[], services: string[], tasks: string[]): string[] {
-    //     const taskIdCombinations = [];
+    private generateTaskIdCombinations(domain: string, service: string, tasks: string[]): string[] {
+        const taskIdCombinations = [];
 
+        if(tasks != null){
+            tasks.forEach((task) => {
+                const taskId = TaskId.convertToTaskId(domain, service, task);
+                taskIdCombinations.push(taskId);
+            })
+        }
     
-    //     // null이 아닌 요소들만 필터링
-    //     const filteredDomains = domains.filter(domain => domain !== null);
-    //     const filteredServices = services.filter(service => service !== null);
-    //     const filteredTasks = tasks.filter(task => task !== null);
-    
-    //     // 각 배열이 비어있는지 확인
-    //     if (filteredDomains.length === 0 || filteredServices.length === 0 || filteredTasks.length === 0) {
-    //         // 하나라도 비어있다면, 빈 배열 반환
-    //         return [];
-    //     }
-        
-    //     // 모든 도메인에 대해 반복
-    //     filteredDomains.forEach((domain) => {
-    //       // 모든 태스크에 대해 반복
-    //       filteredServices.forEach((service) => {
-    //         // 모든 태스크 타입에 대해 반복
-    //         filteredTasks.forEach((task) => {
-    //           // 각 조합에 대한 taskId 생성
-    //           const taskId = TaskId.convertToTaskId(domain, service, task);
-    //           taskIdCombinations.push(taskId);
-    //         });
-    //       });
-    //     });
-    
-    //     return taskIdCombinations;
-            return [];
+        return taskIdCombinations;
     }
      
 }
