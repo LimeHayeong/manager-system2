@@ -9,7 +9,7 @@ export function timeStatAggregationPipeline(firstId, lastId) {
                         {
                           $mod: [
                             "$timestamp",
-                            15 * 60 * 1000, // 15분
+                            30 * 60 * 1000, // 30분
                           ],
                         },
                       ],
@@ -94,3 +94,32 @@ export function exeStatAggregationPipeline(firstId, lastId) {
         }
       }
 ]}
+
+export function viExeAggregationPipeline(conditions: object, pointNumber: number, pointSize: number, i: number): any[] {
+  return [
+    { $match: conditions },
+    { $sort: { startAt: -1 } },
+    { $skip: pointSize * i },
+    { $limit: pointSize },
+    {
+        $group: {
+            _id: null,
+            from: { $min: "$startAt" },
+            to: { $max: "$endAt" },
+            info: { $sum: "$data.info" },
+            warn: { $sum: "$data.warn" },
+            error: { $sum: "$data.error" }
+        }
+    },
+    {
+        $project: {
+            _id: 0,
+            from: 1,
+            to: 1,
+            info: 1,
+            warn: 1,
+            error: 1
+        }
+    }
+  ]
+}

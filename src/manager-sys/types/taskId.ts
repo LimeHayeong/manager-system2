@@ -3,12 +3,12 @@ import { getEnumKeyFromValue, getEnumValueFromKey } from "../util/enum";
 import { Task } from "./task";
 
 export namespace TaskId {
-    // '001-001-02' 형식의 문자열로 변환하는 함수
     export interface context {
         taskId: string;
         exeType: string;
     }
 
+    // '001-001-02' 형식의 문자열로 변환하는 함수
     export function convertToTaskId(domain: string, service: string, task: string): string {
         const domainT = domain as keyof typeof Task.Domain
         const serviceT = service as keyof typeof Task.Service

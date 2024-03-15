@@ -1,34 +1,37 @@
-export interface ViExeRequestDTO {
-    domain: string;
-    service: string;
-    task: string;
-    exeType: string;
-    pointNumber: number;
-    pointSize: number;
+export interface ViExeRequestbyTaskIdDTO extends taskId, ViExeOptions {
 }
 
-export interface ViTimeRequestDTO {
-    domain: string;
-    service: string;
-    task: string;
-    exeType: string;
-    pointNumber: number;
-    unitTime:  '30m' | '1h' | '4h' | '6h' |  '12h' | '24h';
+export interface ViTimeRequestbyTaskIdDTO extends taskId, ViTimeOptions {
 }
 
-export interface ViExeResultDTO {
-    domain: string;
-    service: string;
-    task: string;
-    exeType: string;
-    pointNumber: number;
-    pointSize: number;
-    data: any;
+export interface ViExeResultbyTaskIdDTO extends taskId, ViExeOptions {
+    data: pointData[];
 }
 
-export interface ViExeData {
+export interface ViTimeResultbyTaskIdDTO extends taskId, ViTimeOptions {
+    data: pointData[];
+}
+
+export interface ViExeOptions {
+    pointNumber?: number;
+    pointSize?: 10 | 30 | 50;
+}
+
+export interface ViTimeOptions {
+    pointNumber?: number;
+    unitTime?: '30m' | '1h' | '4h' | '6h' |  '12h' | '24h';
+}
+
+export interface taskId {
     domain: string;
-    service: string;
-    task: string;
-    exeType: string;
+    service?: string;
+    task?: string[];
+}
+
+export interface pointData {
+    from: number;
+    to: number;
+    info: number;
+    warn: number;
+    error: number;
 }

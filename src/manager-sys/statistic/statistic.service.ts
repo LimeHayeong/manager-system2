@@ -1,17 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import mongoose, { Model } from 'mongoose';
 import { IExeStatisticDoc, IMetaDoc, ITimeStatisticDoc } from '../database/dto/statistic.interface';
 import { ILogDoc } from '../database/dto/log.interface';
 import { Cron } from '@nestjs/schedule';
-import { exeStatAggregationPipeline, timeStatAggregationPipeline } from '../database/queries/mongodb.aggregate';
+import { exeStatAggregationPipeline, timeStatAggregationPipeline, viExeAggregationPipeline } from '../database/queries/mongodb.aggregate';
 import { exeStatisticOps, timeStatisticOps } from '../database/queries/mongodb.bulkwrite';
 import { TaskId } from '../types/taskId';
-import { ViExeRequestDTO, ViExeResultDTO } from './dto/vi.dto';
+import { ViExeRequestbyTaskIdDTO, ViExeResultbyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResultbyTaskIdDTO, pointData } from './dto/vi.dto';
+import { Helper } from '../util/helper';
+import { QueryBuilder } from '../database/queries/mongodb.query.builder';
 
 const aggregationBatchSize = 10000;
 
 @Injectable()
-export class StatisticService {
+export class StatisticService implements OnModuleInit {
     private aggregationBatchSize: number;
     private staticRunning: boolean;
 
@@ -29,6 +31,13 @@ export class StatisticService {
         this.staticRunning = false;
 
         // this.getExeStatistic();
+    }
+
+    async onModuleInit() {
+        await this.getExeStatistic({
+            domain: 'DomainA',
+            service: 'SecondService',
+        })
     }
 
     // 1분마다 통계자료 집계.
@@ -85,27 +94,52 @@ export class StatisticService {
         this.staticRunning = false;
     }
 
-    // public async getExeStatistic(domain: string, task: string, taskType: string, pointNumber: number, pointSize: number): Promise<ViExeResultDTO> {
-    //     const taskId = TaskId.convertToTaskId(domain, task, taskType);
-    //     try {
-    //         const data = await this.exeStatisticModel
-    //             .find({ taskId: taskId })
-    //             .sort({ startAt: -1 })
-    //             .limit(pointNumber * pointSize)
-    //             .select('contextId data startAt')
-    //             .lean()
-    //             .exec();
+    
+    @Helper.ExecutionTimerAsync
+    @Helper.SimpleErrorHandling
+    public async getExeStatistic(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResultbyTaskIdDTO> {
+        const { domain, service, task, pointNumber = 30, pointSize = 10 } = query;
 
-    //         const result = data.map((d) => {
-    //             return {
-                    
-    //             }
-    //         })
+        const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
 
-    //         return {}
-    //     } catch (e) {
-    //         console.error(e);
+        const results = [];
+        for (let i = 0; i < pointNumber; i++) {
+            const aggregateSteps = viExeAggregationPipeline(conditions, pointNumber, pointSize, i)
+    
+            // 현재 반복에 대한 집계 결과를 가져옵니다.
+            const exeStats = await this.exeStatisticModel.aggregate(aggregateSteps);
+    
+            // 결과가 있을 경우 배열에 추가합니다.
+            if (exeStats && exeStats.length > 0) {
+                results.push(exeStats[0]); // exeStats는 배열이므로 첫 번째 요소만 추가합니다.
+            }
+        }
+        // console.log(results)
 
-    //     }
-    // }
+        return {
+            domain,
+            service,
+            task,
+            pointNumber: Number(pointNumber),
+            pointSize: pointSize,
+            data: results
+        }
+    }
+
+    @Helper.ExecutionTimerAsync
+    @Helper.SimpleErrorHandling
+    public async getTimeStatistic(query: ViTimeRequestbyTaskIdDTO): Promise<ViTimeResultbyTaskIdDTO> {
+        const { domain, service, task, pointNumber = 30, unitTime = '4h'} = query;
+
+        const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
+
+        return {
+            domain,
+            service,
+            task,
+            pointNumber: Number(pointNumber),
+            unitTime: unitTime,
+            data: null
+        }
+    }
 }

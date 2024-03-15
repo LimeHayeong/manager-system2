@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 import { ApiResponse } from '../types/api.response';
 import { StatisticService } from './statistic.service';
-import { ViExeRequestDTO } from './dto/vi.dto';
+import { ViExeRequestbyTaskIdDTO, ViExeResultbyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResultbyTaskIdDTO } from './dto/vi.dto';
 
 @Controller('statistic')
 export class StatisticController {
@@ -12,21 +12,37 @@ export class StatisticController {
     ) {
     }
 
-    // @Get('/exe')
-    // async getExeStatistic(
-    //     @Req() req: Request,
-    //     @Res() res: Response,
-    //     @Query() query: ViExeRequestDTO
-    // ) {
-    //     const { domain, task, taskType, pointNumber, pointSize } = query;
-    //     const data = await this.service.getExeStatistic(domain, task, taskType, pointNumber, pointSize);
-    //     const response: ApiResponse = {
-    //         code: 200,
-    //         payload: {
-    //             message: null,
-    //             data: data
-    //         }
-    //     }
-    //     res.status(200).json(response);
-    // }
+    @Get('/exe')
+    async getExeStatistic(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: ViExeRequestbyTaskIdDTO
+    ) {
+        const data: ViExeResultbyTaskIdDTO = await this.service.getExeStatistic(query);
+        const response: ApiResponse = {
+            code: 200,
+            payload: {
+                message: null,
+                data: data
+            }
+        }
+        res.status(200).json(response);
+    }
+
+    @Get('/time')
+    async getTimeStatistic(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: ViTimeRequestbyTaskIdDTO
+    ) {
+        const data: ViTimeResultbyTaskIdDTO = await this.service.getTimeStatistic(query);
+        const response: ApiResponse = {
+            code: 200,
+            payload: {
+                message: null,
+                data: data
+            }
+        }
+        res.status(200).json(response);
+    }
 }
