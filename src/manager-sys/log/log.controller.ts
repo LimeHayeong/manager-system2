@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Req, Res } from '@nestjs/common';
 import { LogService } from './log.service';
 import { Request, Response } from 'express';
-import { LogQueryDTO, RecentLogQueryDTO } from './dto/log-query.dto';
+import { LogQuerybyContextIdDTO, LogQuerybyTaskIdDTO, RecentLogQueryDTO } from './dto/log-query.dto';
 import { ApiResponse } from '../types/api.response';
 
 @Controller('log')
@@ -32,9 +32,18 @@ export class LogController {
     async getLogs(
         @Req() req: Request,
         @Res() res: Response,
-        @Query() query: LogQueryDTO,
+        @Query() query: LogQuerybyContextIdDTO | LogQuerybyTaskIdDTO,
     ) {
-        const result = await this.logService.getLogs(query);
+        const { queryType, ...remains } = query;
+        let result;
+        let queryData;
+        if(queryType === 'contextId') {
+            queryData = remains as LogQuerybyContextIdDTO;
+            result = await this.logService.getLogByContextIds(queryData);
+        }else if(queryType === 'taskId') {
+            queryData = remains as LogQuerybyTaskIdDTO;
+            result = await this.logService.getLogsByTaskId(queryData);
+        }
         const response: ApiResponse = {
             code: 200,
             payload: {

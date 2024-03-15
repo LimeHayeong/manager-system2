@@ -10,10 +10,11 @@ export interface RecentLogQueryDTO {
     limit?: number;
 }
 
-export interface RecentLogResultDTO {
+export interface LogResultDTO {
     page: number;
     limit: number;
-    logs: ResultLog[][];
+    totalCount: number;
+    logs: ResultLog[]
 }
 
 export interface ResultLog extends Omit<Log.Log, 'taskId'> {
@@ -22,16 +23,29 @@ export interface ResultLog extends Omit<Log.Log, 'taskId'> {
     task: string;
 }
 
-export interface LogQueryDTO {
+export interface LogQuerybyTaskIdDTO extends QueryOptions {
     domain: string;
     service?: string;
     task?: string[];
+}
+
+export interface LogQuerybyContextIdDTO extends QueryOptions{
+    contextId: string[];
+}
+
+export interface LogQuerybyTaskIdData extends Omit<LogQuerybyTaskIdDTO, 'queryType'> {
+}
+
+export interface LogQuerybyContextIdData extends Omit<LogQuerybyContextIdDTO, 'queryType'> {
+}
+
+export interface QueryOptions {
+    from: number;
+    to: number;
+    queryType: 'taskId' | 'contextId';
     exeType?: string[];
-    contextId?: string[];
     level?: Log.Level[];
     chain?: string[];
-    from?: number;
-    to?: number;
     page?: number;
     limit?: number;
 }
