@@ -22,13 +22,17 @@ GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService HTTP/
 GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=SecondService HTTP/1.1
 
 ### 특정 taskId 1개 전 꺼 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT HTTP/1.1
 
 ### 특정 taskId 2개 전 꺼 2page 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT&beforeCount=2&page=2 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT&beforeCount=2&page=2 HTTP/1.1
+
+### domainD, error 보기용
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainD&service=FirstService&task=processRT&beforeCount=2&page=6 HTTP/1.1
+
 
 ### 특정 taskId 2개 전 꺼 3page 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks=processRT&beforeCount=2&page=3 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT&beforeCount=2&page=3 HTTP/1.1
 
 
 
@@ -36,34 +40,34 @@ GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&tasks
 
 ### taskId 전범위 검색
 
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, level error
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, level error, warn
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, 특정 체인 2개, level error, warn
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, 특정 체인 2개, level error, warn (병렬처리)
-GET http://{{URL}}:{{PORT}}/log/test?queryType=taskId&domain=DomainD&service=FirstService&tasks=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid/test?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색 특정 체인 1개
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
 
 
 
 ### taskId 전범위 검색 특정 체인 2개 포함 30번째 page
-GET http://{{URL}}:{{PORT}}/log?queryType=taskId&domain=DomainA&service=FirstService&tasks=processRT&from=1710000000000&to=1711000000000&chain=Chain_16&chain=Chain_0&page=30 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16&chain=Chain_0&page=30 HTTP/1.1
 
 
 ### contextId 전범위 검색 1
-GET http://{{URL}}:{{PORT}}/log?queryType=contextId&contextId=0t-ba3281ec-7f11-42df-b62d-8a78c54a8570&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=0t-ba3281ec-7f11-42df-b62d-8a78c54a8570&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### contextId 전범위 검색 2
-GET http://{{URL}}:{{PORT}}/log?queryType=contextId&contextId=1234&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=1234&from=1710000000000&to=1711000000000 HTTP/1.1
 
 
 ###
@@ -77,3 +81,14 @@ GET http://{{URL}}:{{PORT}}/log?queryType=contextId&contextId=1234&from=17100000
 #####################################################
 #################### Statistic test #################
 #####################################################
+
+### Graphmode graph 1개 조회
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA&service=FirstService
+
+### GRID Mode 1개 조회
+
+GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=DomainA&service=FirstService&pointNumber=168&unitTime=4h
+
+### Histogram 1개 조회
+
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA&service=FirstService&task=processRT&pointNumber=30&pointSize=10

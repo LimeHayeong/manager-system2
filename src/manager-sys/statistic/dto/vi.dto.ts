@@ -25,7 +25,7 @@ export interface ViTimeOptions {
 export interface taskId {
     domain: string;
     service?: string;
-    task?: string[];
+    task?: string[] | string;
 }
 
 export interface pointData {

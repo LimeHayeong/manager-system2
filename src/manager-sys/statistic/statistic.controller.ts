@@ -5,20 +5,20 @@ import { ApiResponse } from '../types/api.response';
 import { StatisticService } from './statistic.service';
 import { ViExeRequestbyTaskIdDTO, ViExeResultbyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResultbyTaskIdDTO } from './dto/vi.dto';
 
-@Controller('statistic')
+@Controller('stat')
 export class StatisticController {
     constructor(
         private readonly service: StatisticService,
     ) {
     }
 
-    @Get('/exe')
-    async getExeStatistic(
+    @Get('/exe/taskid')
+    async getExeStatisticByTaskId(
         @Req() req: Request,
         @Res() res: Response,
         @Query() query: ViExeRequestbyTaskIdDTO
     ) {
-        const data: ViExeResultbyTaskIdDTO = await this.service.getExeStatistic(query);
+        const data: ViExeResultbyTaskIdDTO = await this.service.getExeStatisticByTaskId(query);
         const response: ApiResponse = {
             code: 200,
             payload: {
@@ -29,13 +29,13 @@ export class StatisticController {
         res.status(200).json(response);
     }
 
-    @Get('/time')
-    async getTimeStatistic(
+    @Get('/time/taskid')
+    async getTimeStatisticByTaskId(
         @Req() req: Request,
         @Res() res: Response,
         @Query() query: ViTimeRequestbyTaskIdDTO
     ) {
-        const data: ViTimeResultbyTaskIdDTO = await this.service.getTimeStatistic(query);
+        const data: ViTimeResultbyTaskIdDTO = await this.service.getTimeStatisticByTaskId(query);
         const response: ApiResponse = {
             code: 200,
             payload: {

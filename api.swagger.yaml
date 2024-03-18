@@ -59,35 +59,59 @@ paths:
                     payload:
                       message: ${task} already executed
         
-  /log/recent:
+  /log/ctxid:
     get:
       tags:
         - log
-      summary: Get recent logs
-      description: Get recent log arrays (default 3)
-      operationId: getRecentLogs
+      summary: Query logs with contextIds
+      description: Query logs with contextIds
+      operationId: getLogsByContextId
       parameters:
         - in: query
-          name: domain
+          name: contextId
           required: true
           schema:
             type: string
         - in: query
-          name: task
+          name: from
           required: true
           schema:
-            type: string
+            type: number
         - in: query
-          name: taskType
+          name: to
           required: true
           schema:
-            type: string
+            type: number
         - in: query
-          name: number
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+            enum:
+              - INFO
+              - WARN
+              - ERROR
+        - in: query
+          name: page
           required: false
           schema:
             type: number
-            defualt: 3
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
       responses:
         '200':
           description:
@@ -102,64 +126,377 @@ paths:
                     payload:
                       message: null
                       data:
+                        page: 1
+                        limit: 100
+                        totalCount: 693059
                         logs:
-  
-  /log/query:
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                        filteringOptions:
+                          exeTypes: [CRON, TRIGGER, WORK]
+                          levels: [INFO, WARN, ERROR]
+                          chains: []
+
+  /log/recent:
     get:
       tags:
         - log
-      summary: Query logs
-      description: Query logs with filtering
-      operationId: queryLogs
+      summary: Get recent logs
+      description: Get recent logs
+      operationId: getRecentLogs
       parameters:
-        # - in: query
-        #   name: level
-        #   schema:
-        #     type: string
-        #   description: log level
-        # - in: query
-        #   name: time
-        #   schema:
-        #     type: string
-        #   description: log time
-        # - in: query
-        #   name: message
-        #   schema:
-        #     type: string
-        #   description: log message
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: beforeCount
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
       responses:
         '200':
           description:
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        page: 1
+                        limit: 100
+                        totalCount: 103
+                        logs:
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
 
-  /statistic/chart:
+  /log/taskid:
+    get:
+      tags:
+        - log
+      summary: Query logs with taskId
+      description: Query logs with taskId
+      operationId: getLogsByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+            enum:
+              - INFO
+              - WARN
+              - ERROR
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        page: 1
+                        limit: 100
+                        totalCount: 693059
+                        logs:
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "DomainA"
+                            service: "FirstService"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                        filteringOptions:
+                          exeTypes: [CRON, TRIGGER, WORK]
+                          levels: [INFO, WARN, ERROR]
+                          chains: []
+
+  /stat/exe/ctxid:
     get:
       tags:
         - statistic
-      summary: Get chart
-      description: Get chart data
-      operationId: getStatisticChart
-      responses:
-        '200':
-          description:
-          content:
-            application/json:
+      summary: (아직 구현 안 됨)Get exe-statistic data by contextId
 
-  /statistic/heatmap:
+  /stat/exe/taskid:
     get:
       tags:
         - statistic
-      summary: Get heatmap
-      description: Get heatmap data
-      operationId: getStatisticHeatmap
+      summary: Get exe-statistic data by taskId
+      description: Get statistic data in execution level by taskId
+      operationId: getExeStatisticByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: pointNumber
+          required: false
+          schema:
+            type: number
+          default: 30
+        - in: query
+          name: pointSize
+          required: false
+          schema:
+            type: number
+            enum:
+              - 10
+              - 30
+              - 50
+            default: 10
       responses:
         '200':
           description:
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        domain: DomainA
+                        service: FirstService
+                        pointNumber: 30
+                        pointSize: 10
+                        data:
+                          - from: 1710469270496
+                            to: 1710469759020
+                            info: 1656
+                            warn: 1513
+                            error: 0
+                          - from: 1710469760002
+                            to: 1710470040014
+                            info: 6237
+                            warn: 4866
+                            error: 0
 
+  /stat/time/ctxid:
+    get:
+      tags:
+        - statistic
+      summary: (아직 구현 안 됨)Get time-statistic data by contextId
 
+  /stat/time/taskid:
+    get:
+      tags:
+        - statistic
+      summary: Get time-statistic data by taskId
+      description: Get statistic data in time level by taskId
+      operationId: getTimeStatisticByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: pointNumber
+          required: false
+          schema:
+            type: number
+          default: 168
+        - in: query
+          name: pointSize
+          required: false
+          schema:
+            type: number
+            enum:
+              - 30m
+              - 1h
+              - 4h
+              - 6h
+              - 12h
+              - 24h
+            default: 4h
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data: 
+                        - from: 1710468000000
+                          to: 1710482400000
+                          info: 165712
+                          warn: 164523
+                          error: 0
+                        - from: 1710482400000
+                          to: 1710496800000
+                          info: 115971
+                          warn: 111477
+                          error: 0
 
 components:
   schemas:

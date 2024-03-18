@@ -271,7 +271,7 @@ export class LogService implements OnModuleInit {
 
     private transformDocToLog(logs: ILogDoc[]): ResultLog[] {
         return logs.map((log) => {
-            const { _id, ...remain } = log;
+            const { _id, taskId, ...remain } = log;
             const { domain, service, task } = TaskId.convertFromTaskId(log.taskId);
             return { domain, service, task, ...remain };
         });

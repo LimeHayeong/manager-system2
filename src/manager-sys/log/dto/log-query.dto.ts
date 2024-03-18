@@ -3,7 +3,7 @@ import { Log } from "src/manager-sys/types/log";
 export interface RecentLogQueryDTO {
     domain: string;
     service?: string;
-    task?: string[];
+    task?: string[] | string;
     exeType?: string;
     beforeCount?: number;
     page?: number;
@@ -38,11 +38,11 @@ export const FilteringOptions = {
 export interface LogQuerybyTaskIdDTO extends QueryOptions {
     domain: string;
     service?: string;
-    task?: string[];
+    task?: string[] | string;
 }
 
 export interface LogQuerybyContextIdDTO extends QueryOptions{
-    contextId: string[];
+    contextId: string[] | string;
 }
 
 export interface LogQuerybyTaskIdData extends Omit<LogQuerybyTaskIdDTO, 'queryType'> {
@@ -54,7 +54,6 @@ export interface LogQuerybyContextIdData extends Omit<LogQuerybyContextIdDTO, 'q
 export interface QueryOptions {
     from: number;
     to: number;
-    queryType: 'taskId' | 'contextId';
     exeType?: string[];
     level?: Log.Level[];
     chain?: string[];

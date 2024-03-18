@@ -35,25 +35,13 @@ export class LogController {
         res.status(200).json(response);
     }
 
-    @Get('/')
-    async getLogs(
+    @Get('/ctxid')
+    async getLogsByContextId(
         @Req() req: Request,
         @Res() res: Response,
-        @Query() query: LogQuerybyContextIdDTO | LogQuerybyTaskIdDTO,
+        @Query() query: LogQuerybyContextIdDTO
     ) {
-        const { queryType, ...remains } = query;
-        let logs;
-        let queryData;
-        // console.log('log controller: ', query);
-        if(queryType === 'contextId') {
-            queryData = remains as LogQuerybyContextIdDTO;
-            logs = await this.logService.getLogByContextIds(queryData);
-        }else if(queryType === 'taskId') {
-            queryData = remains as LogQuerybyTaskIdDTO;
-            logs = await this.logService.getLogsByTaskId(queryData);
-        }else{
-            throw new Error('Invalid query type');
-        }
+        const logs = await this.logService.getLogByContextIds(query);
         const result: LogResponseDTO = {
             ...logs,
             filteringOptions: FilteringOptions,
@@ -68,26 +56,35 @@ export class LogController {
         res.status(200).json(response);
     }
 
-    // test
-    @Get('/test')
-    async getLogsTest(
+    @Get('/taskid')
+    async getLogsByTaskId(
         @Req() req: Request,
         @Res() res: Response,
-        @Query() query: LogQuerybyContextIdDTO | LogQuerybyTaskIdDTO,
+        @Query() query: LogQuerybyTaskIdDTO,
     ) {
-        const { queryType, ...remains } = query;
-        let logs;
-        let queryData;
-        console.log('log controller: ', query);
-        if(queryType === 'contextId') {
-            queryData = remains as LogQuerybyContextIdDTO;
-            logs = await this.logService.getLogByContextIds(queryData);
-        }else if(queryType === 'taskId') {
-            queryData = remains as LogQuerybyTaskIdDTO;
-            logs = await this.logService.getLogsByTaskIdAdvanced(queryData);
-        }else{
-            throw new Error('Invalid query type');
+        const logs = await this.logService.getLogsByTaskId(query);
+        const result: LogResponseDTO = {
+            ...logs,
+            filteringOptions: FilteringOptions,
         }
+        const response: ApiResponse = {
+            code: 200,
+            payload: {
+                message: null,
+                data: result
+            }
+        }
+        res.status(200).json(response);
+    }
+
+    // 병렬처리 테스트용
+    @Get('/taskid/test')
+    async getLogsByTaskIdConcurrent(
+        @Req() req: Request,
+        @Res() res: Response,
+        @Query() query: LogQuerybyTaskIdDTO,
+    ) {
+        const logs = await this.logService.getLogsByTaskIdAdvanced(query);
         const result: LogResponseDTO = {
             ...logs,
             filteringOptions: FilteringOptions,
