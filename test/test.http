@@ -6,7 +6,11 @@
 ################## Controller test ##################
 #####################################################
 
+###
+POST http://{{URL}}:{{PORT}}/domain/a/firstService/processRT/start HTTP/1.1
 
+###
+POST http://{{URL}}:{{PORT}}/domain/a/secondService/processRT/start HTTP/1.1
 
 #####################################################
 #################### Query test #####################

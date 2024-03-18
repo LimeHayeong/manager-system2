@@ -84,11 +84,11 @@ export abstract class BaseService {
     async triggerTask(data: TaskStartRequestDTO): Promise<string> {
         const { domain, service, task } = data;
         const taskId = TaskId.convertToTaskId(domain, service, task);
-
-        if(this.manager.isValidTask(taskId)){
+        
+        if(!this.manager.isValidTask(taskId, Task.ExecutionType.TRIGGER)){
             throw new NotFoundException(`${taskId} not found`)
         }
-        if(this.manager.isRunning(taskId)){
+        if(this.manager.isRunning(taskId, Task.ExecutionType.TRIGGER)){
             throw new ConflictException(`${taskId} is already running`)
         }
         if(typeof this[task] === 'function'){

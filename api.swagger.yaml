@@ -6,7 +6,7 @@ info:
 # servers:
 #   - url: https://petstore3.swagger.io/api/v3
 tags:
-  - name: ${task}
+  - name: control
     description: task controller
   - name: log
     description: log query with filtering
@@ -14,13 +14,13 @@ tags:
     description: statistic data
  
 paths:
-  /${task}/start:
+  /${domain}/${service}/${task}/start:
     post:
       tags:
-        - ${task}
+        - control
       summary: Start task
       description: task controller
-      operationId: start${task}
+      operationId: triggerTask
       responses:
         '200':
           description: task 시작 성공
@@ -72,16 +72,19 @@ paths:
           required: true
           schema:
             type: string
+            example: 0t-9743f479-98ca-468a-8784-35c175652065
         - in: query
           name: from
           required: true
           schema:
             type: number
+            example: 1710730840007
         - in: query
           name: to
           required: true
           schema:
             type: number
+            example: 1710730860032
         - in: query
           name: exeType
           required: false
@@ -168,16 +171,19 @@ paths:
           required: true
           schema:
             type: string
+            example: DomainA
         - in: query
           name: service
           required: false
           schema:
             type: string
+            example: FirstService
         - in: query
           name: task
           required: false
           schema:
             type: string
+            example: processRT
         - in: query
           name: exeType
           required: false
@@ -257,26 +263,31 @@ paths:
           required: true
           schema:
             type: string
+            example: DomainA
         - in: query
           name: service
           required: false
           schema:
             type: string
+            example: FirstService
         - in: query
           name: task
           required: false
           schema:
             type: string
+            example: processRT
         - in: query
           name: from
           required: true
           schema:
             type: number
+            example: 1710000000000
         - in: query
           name: to
           required: true
           schema:
             type: number
+            example: 1711000000000
         - in: query
           name: exeType
           required: false
@@ -354,7 +365,7 @@ paths:
     get:
       tags:
         - statistic
-      summary: (아직 구현 안 됨)Get exe-statistic data by contextId
+      summary: (Work에 사용 예정)Get exe-statistic data by contextId
 
   /stat/exe/taskid:
     get:
@@ -369,16 +380,19 @@ paths:
           required: true
           schema:
             type: string
+            example: DomainA
         - in: query
           name: service
           required: false
           schema:
             type: string
+            example: SecondService
         - in: query
           name: task
           required: false
           schema:
             type: string
+            example: processRT
         - in: query
           name: pointNumber
           required: false
@@ -429,7 +443,7 @@ paths:
     get:
       tags:
         - statistic
-      summary: (아직 구현 안 됨)Get time-statistic data by contextId
+      summary: (Work에 사용 예정)Get time-statistic data by contextId
 
   /stat/time/taskid:
     get:
@@ -444,16 +458,19 @@ paths:
           required: true
           schema:
             type: string
+            example: DomainD
         - in: query
           name: service
           required: false
           schema:
             type: string
+            example: FirstService
         - in: query
           name: task
           required: false
           schema:
             type: string
+            example: processRT
         - in: query
           name: pointNumber
           required: false
@@ -461,10 +478,10 @@ paths:
             type: number
           default: 168
         - in: query
-          name: pointSize
+          name: unitTime
           required: false
           schema:
-            type: number
+            type: string
             enum:
               - 30m
               - 1h
@@ -487,16 +504,22 @@ paths:
                     payload:
                       message: null
                       data: 
-                        - from: 1710468000000
-                          to: 1710482400000
-                          info: 165712
-                          warn: 164523
-                          error: 0
-                        - from: 1710482400000
-                          to: 1710496800000
-                          info: 115971
-                          warn: 111477
-                          error: 0
+                        domain: DomainD
+                        service: FirstService
+                        task: processRT
+                        pointNumber: 168
+                        unitTime: 4h
+                        data:
+                          - from: 1710468000000
+                            to: 1710482400000
+                            info: 165712
+                            warn: 164523
+                            error: 0
+                          - from: 1710482400000
+                            to: 1710496800000
+                            info: 115971
+                            warn: 111477
+                            error: 0
 
 components:
   schemas:

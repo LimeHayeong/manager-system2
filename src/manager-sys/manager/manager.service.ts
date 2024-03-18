@@ -31,18 +31,24 @@ export class ManagerService {
         console.log('[System] ManagerService initialized');
     }
 
-    public isRunning(taskId: string) {
-        return this.taskStates.find((state) => state.taskId === taskId).status === Task.Status.PROGRESS;
+    public isRunning(taskId: string, exeType: Task.ExecutionType) {
+        return this.taskStates.find(state => 
+            state.taskId === taskId
+            && state.exeType === exeType
+        ).status === Task.Status.PROGRESS;
     }
 
-    public isValidTask(taskId: string) {
-        return this.taskStates.find((state) => state.taskId === taskId) !== undefined;
+    public isValidTask(taskId: string, exeType: Task.ExecutionType) {
+        return this.taskStates.find(state => 
+            state.taskId === taskId
+            && state.exeType === exeType
+        ) !== undefined;
     }
 
     // TODO: CRON context에서 에러 전파하려면 여기서 정보를 제공해야함.
     public async buildTask(context: TaskId.context): Promise<boolean> {
         const { taskId, exeType } = context;
-        const currentTask = this.getTaskState(taskId);
+        const currentTask = this.getTaskState(context);
         if(!currentTask) {
             throw new Error('Invalid task');
         }
@@ -54,7 +60,7 @@ export class ManagerService {
 
     public async startTask(context: TaskId.context, workId?: string) {
         const { taskId, exeType } = context; 
-        const currentTask = this.getTaskState(taskId);
+        const currentTask = this.getTaskState(context);
         const dateNow = Date.now();
 
         currentTask.status = Task.Status.PROGRESS;
@@ -74,7 +80,7 @@ export class ManagerService {
     }
 
     public async logTask(taskId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.IContext, workId?: string) {
-        const currentTask = this.getTaskState(taskId);
+        const currentTask = this.getTaskState({ taskId, exeType});
         const dateNow = Date.now();
         currentTask.updatedAt = dateNow;
 
@@ -86,7 +92,7 @@ export class ManagerService {
 
     public async endTask(context: TaskId.context, workId?: string) {
         const { taskId, exeType } = context;
-        const currentTask = this.getTaskState(taskId);
+        const currentTask = this.getTaskState(context);
         const dateNow = Date.now();
 
         if(exeType === Task.ExecutionType['CRON']){
@@ -132,8 +138,12 @@ export class ManagerService {
         }
     }
 
-    private getTaskState(taskId: string) {
-        const taskIdx = this.taskStates.findIndex((state) => state.taskId === taskId);
+    private getTaskState(context: TaskId.context) {
+        const { taskId,  exeType} = context;
+        const taskIdx = this.taskStates.findIndex(state =>
+            state.taskId === taskId
+            && state.exeType === exeType
+        );
         if(taskIdx === -1) return null;
         return this.taskStates[taskIdx];
     }
