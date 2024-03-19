@@ -12,11 +12,11 @@ export namespace Log {
         contextId: string;
         level: Level;
         exeType: Task.ExecutionType
-        data: IContext | null;
+        data: LogData | null;
         timestamp: number; // toISOString
     }
 
-    export interface IContext {
+    export interface LogData {
       message?: string;
       chain?: string;
       stack?: string[];

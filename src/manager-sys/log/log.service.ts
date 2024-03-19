@@ -38,7 +38,7 @@ export class LogService implements OnModuleInit {
         // });
     }
 
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
     public async getRecentLogs(query: RecentLogQueryDTO): Promise<LogResultDTO> {
         const { domain, service, task, exeType, beforeCount = 1, page = 1, limit = 100 } = query;
@@ -93,7 +93,7 @@ export class LogService implements OnModuleInit {
 
     // TODO: 이렇게 하는 게 맞긴한데, startAt이 지정이 안되어 있으니까 전체를 parsing하느라 성능이 떨어짐.
     // 먼저 contextId에서 startAt, endAt 리스트를 뽑아오는게 낫지 않을까? from, to 오차에 주의하긴 해야함.
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
     public async getLogsByTaskId(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
         // console.log(query)
@@ -136,7 +136,7 @@ export class LogService implements OnModuleInit {
         };
     }
 
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
     public async getLogsByTaskIdAdvanced(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
         // console.log(query)
@@ -213,7 +213,7 @@ export class LogService implements OnModuleInit {
         };
     }
 
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
     public async getLogByContextIds(query: LogQuerybyContextIdData): Promise<LogResultDTO> {
         const { contextId, from, to, exeType, level, chain, page = 1, limit = 100} = query;
@@ -262,9 +262,9 @@ export class LogService implements OnModuleInit {
         const logs = this.transformDocToLog(queryData);
 
         return {
-            page: page as number,
-            limit: limit as number ,
-            totalCount: logs.length as number ,
+            page: Number(page),
+            limit: Number(limit),
+            totalCount: Number(logs.length),
             logs: logs,
         }
     }

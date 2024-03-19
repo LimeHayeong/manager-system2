@@ -46,6 +46,7 @@ export class WsPullGateway extends baseGateway {
       @ConnectedSocket() client: Socket,
       @MessageBody() data: recentLogsRequestDTO 
     ) {
+      console.log('requestRTLog')
       const { domain, service, task, exeType, offset, limit } = data;
       const taskId = TaskId.convertToTaskId(domain, service, task);
   

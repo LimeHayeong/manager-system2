@@ -31,23 +31,16 @@ export class ManagerService {
         console.log('[System] ManagerService initialized');
     }
 
-    public isRunning(taskId: string, exeType: Task.ExecutionType) {
-        return this.taskStates.find(state => 
-            state.taskId === taskId
-            && state.exeType === exeType
-        ).status === Task.Status.PROGRESS;
+    public isRunning(context: TaskId.context) {
+        return this.getTaskState(context).status === Task.Status.PROGRESS;
     }
 
-    public isValidTask(taskId: string, exeType: Task.ExecutionType) {
-        return this.taskStates.find(state => 
-            state.taskId === taskId
-            && state.exeType === exeType
-        ) !== undefined;
+    public isValidTask(context: TaskId.context) {
+        return this.getTaskState(context) !== undefined;
     }
 
     // TODO: CRON context에서 에러 전파하려면 여기서 정보를 제공해야함.
     public async buildTask(context: TaskId.context): Promise<boolean> {
-        const { taskId, exeType } = context;
         const currentTask = this.getTaskState(context);
         if(!currentTask) {
             throw new Error('Invalid task');
@@ -79,7 +72,7 @@ export class ManagerService {
         this.wsGateway.emitTaskStateUpdate(this.getDeserializedStates())
     }
 
-    public async logTask(taskId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.IContext, workId?: string) {
+    public async logTask(taskId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.LogData, workId?: string) {
         const currentTask = this.getTaskState({ taskId, exeType});
         const dateNow = Date.now();
         currentTask.updatedAt = dateNow;
@@ -138,21 +131,18 @@ export class ManagerService {
         }
     }
 
-    private getTaskState(context: TaskId.context) {
-        const { taskId,  exeType} = context;
-        const taskIdx = this.taskStates.findIndex(state =>
-            state.taskId === taskId
-            && state.exeType === exeType
+    private getTaskState(context: TaskId.context): Task.TaskState {
+        const { taskId, exeType } = context;
+        return this.taskStates.find(
+            state => state.taskId === taskId && state.exeType === exeType
         );
-        if(taskIdx === -1) return null;
-        return this.taskStates[taskIdx];
     }
 
     private genContextHeader(workId: string): string {
         return workId ? 'wt-' + uuid() : '0t-' + uuid()
     }
 
-    private createLog(taksId: string, contextId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.IContext, timestamp: number): Log.Log {
+    private createLog(taksId: string, contextId: string, level: Log.Level, exeType: Task.ExecutionType, data: Log.LogData, timestamp: number): Log.Log {
         return {
             taskId: taksId,
             contextId: contextId,
@@ -174,35 +164,25 @@ export class ManagerService {
         this.logCache.pushLog(log.taskId, log);
     }
 
+    // 추후에 domain-service-task, taskType 노가다 완료되면 삭제 될 코드
     private generateStates() {
-        TaskId.generateTaskId().map((id) => {
-            this.taskStates.push({
-                taskId: id,
-                exeType: Task.ExecutionType['CRON'],
-                contextId: null,
-                status: Task.Status.TERMINATED,
-                updatedAt: null,
-                startAt: null,
-                endAt: null
-            });
-            this.taskStates.push({
-                taskId: id,
-                exeType: Task.ExecutionType['TRIGGER'],
-                contextId: null,
-                status: Task.Status.TERMINATED,
-                updatedAt: null,
-                startAt: null,
-                endAt: null
-            });
-            this.taskStates.push({
-                taskId: id,
-                exeType: Task.ExecutionType['WORK'],
-                contextId: null,
-                status: Task.Status.TERMINATED,
-                updatedAt: null,
-                startAt: null,
-                endAt: null
-            });
+        const taskIds = TaskId.TaskIds;
+
+        TaskId.generateTaskId().map((id, i) => {
+            taskIds[i].exeTypes.map((exeType) => {
+                this.taskStates.push({
+                    taskId: id,
+                    exeType: Task.ExecutionType[exeType],
+                    contextId: null,
+                    status: Task.Status.TERMINATED,
+                    updatedAt: null,
+                    startAt: null,
+                    endAt: null
+                })
+            })
         })
+        // this.taskStates.map((state) => {
+        //     console.log(state);
+        // })
     }
 }

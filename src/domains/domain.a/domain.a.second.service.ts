@@ -24,7 +24,7 @@ export class DomainASecondService extends BaseService implements OnModuleInit{
         // await this.processRT();
     }
 
-    @Cron('0/20 * * * * *')
+    @Cron('0/30 * * * * *')
     @UseCls(Helper.clsBuilder('DomainA', 'SecondService', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
@@ -54,9 +54,39 @@ export class DomainASecondService extends BaseService implements OnModuleInit{
         await this.log('all finished');
     }
 
+    @Cron('0/30 * * * * *')
+    @UseCls(Helper.clsBuilder('DomainA', 'SecondService', 'processStore'))
+    @Helper.AutoTaskManage
+    public async processStore(context?: string) {
+        const promiseInfo = [];
+
+        for (const chainChunk of _.chunk(chains, 20)) {
+            await new Promise(resolve => setImmediate(resolve));
+
+            const chunkInfos = await Promise.all(
+            chainChunk.map(async (chain: string) => {
+                    const chainInfo = await this.doSomethingA2(chain);
+
+                    if (chainInfo.price) {
+                        try {
+                            await this.doSomethingA(chainInfo);
+                        } catch (e) {
+                            await this.error(e);
+                        }
+                    }
+
+                    return chainInfo;
+                }),
+            );
+            promiseInfo.push(...chunkInfos);
+        }
+
+        await this.log('all finished');
+    }
+
     private async doSomethingA(chainInfo: any) {
         try {
-            await delay(1,2);
+            await delay(0.1,0.2);
             await this.log(`okay`, chainInfo.chainName);
         } catch (e) {
             await this.error(e);
@@ -64,7 +94,7 @@ export class DomainASecondService extends BaseService implements OnModuleInit{
     }
 
     private async doSomethingA2(chain: string) {
-        await delay(1,2);
+        await delay(0.1,0.2);
         if (Math.random() < 1 / 2) {
             await this.warn(`not available`, chain);
             return { chainName: chain, price: null };

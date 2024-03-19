@@ -13,6 +13,7 @@ export namespace Task {
 
     export enum Task {
         processRT = 1,
+        processStore = 2,
     }
 
     export enum ExecutionType {

@@ -5,7 +5,7 @@ import { ILogDoc } from '../database/dto/log.interface';
 import { Cron } from '@nestjs/schedule';
 import { exeStatAggregationPipeline, timeStatAggregationPipeline, viExeAggregationPipeline, viTimeAggregationPipeline } from '../database/queries/mongodb.aggregate';
 import { exeStatisticOps, timeStatisticOps } from '../database/queries/mongodb.bulkwrite';
-import { ViExeRequestbyTaskIdDTO, ViExeResultbyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResultbyTaskIdDTO, pointData } from './dto/vi.dto';
+import { ViExeRequestbyTaskIdDTO, ViExeResponsebyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResponsebyTaskIdDTO } from './dto/vi.dto';
 import { Helper } from '../util/helper';
 import { QueryBuilder } from '../database/queries/mongodb.query.builder';
 
@@ -99,9 +99,9 @@ export class StatisticService implements OnModuleInit {
     }
 
     
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
-    public async getExeStatisticByTaskId(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResultbyTaskIdDTO> {
+    public async getExeStatisticByTaskId(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResponsebyTaskIdDTO> {
         const { domain, service, task, pointNumber = 30, pointSize = 10 } = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
@@ -129,9 +129,9 @@ export class StatisticService implements OnModuleInit {
         }
     }
 
-    @Helper.ExecutionTimerAsync
+    // @Helper.ExecutionTimerAsync
     @Helper.SimpleErrorHandling
-    public async getTimeStatisticByTaskId(query: ViTimeRequestbyTaskIdDTO): Promise<ViTimeResultbyTaskIdDTO> {
+    public async getTimeStatisticByTaskId(query: ViTimeRequestbyTaskIdDTO): Promise<ViTimeResponsebyTaskIdDTO> {
         const { domain, service, task, pointNumber = 30, unitTime = '4h'} = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);

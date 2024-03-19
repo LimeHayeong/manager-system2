@@ -17,11 +17,16 @@ export class LogCache implements OnModuleInit {
     }
 
     async onModuleInit() {
-        TaskId.generateTaskId().map((id) => {
-            this.cache[id.concat('-CRON')] = [];
-            this.cache[id.concat('-TRIGGER')] = [];
-            this.cache[id.concat('-WORK')] = [];
+        // 여기도 이후에 domain-service-task, taskType 노가다 완료되면 해당 꺼 가져오는 로직으로 변경해야 함.
+        const taskIds = TaskId.TaskIds;
+
+        TaskId.generateTaskId().map((id, i) => {
+            taskIds[i].exeTypes.map((exeType) => {
+                this.cache[id.concat(`-${exeType}`)] = [];
+            })
         })
+
+        // console.log(this.cache)
     }
 
     public pushLog(taskId: string, log: Log.Log) {

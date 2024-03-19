@@ -3,6 +3,51 @@ import { getEnumKeyFromValue, getEnumValueFromKey } from "../util/enum";
 import { Task } from "./task";
 
 export namespace TaskId {
+    export const TaskIds = [
+        {
+            domain: 'DomainA',
+            service: 'FirstService',
+            task: 'processRT',
+            exeTypes: ['TRIGGER', 'CRON']
+        },
+        {
+            domain: 'DomainA',
+            service: 'FirstService',
+            task: 'processStore',
+            exeTypes: ['CRON']
+        },
+        {
+            domain: 'DomainA',
+            service: 'SecondService',
+            task: 'processRT',
+            exeTypes: ['TRIGGER', 'CRON']
+        },
+        {
+            domain: 'DomainA',
+            service: 'SecondService',
+            task: 'processStore',
+            exeTypes: ['CRON']
+        },
+        {
+            domain: 'DomainB',
+            service: 'FirstService',
+            task: 'processRT',
+            exeTypes: ['CRON']
+        },
+        {
+            domain: 'DomainC',
+            service: 'FirstService',
+            task: 'processRT',
+            exeTypes: ['CRON']
+        },
+        {
+            domain: 'DomainD',
+            service: 'FirstService',
+            task: 'processRT',
+            exeTypes: ['CRON', 'TRIGGER']
+        }
+    ]
+
     export interface context {
         taskId: string;
         exeType: string;
@@ -43,6 +88,24 @@ export namespace TaskId {
     }
 
     export function generateTaskId(): string[] {
+        const codes: string[] = [];
+
+        TaskIds.map((id) => {
+            const domain = id.domain as keyof typeof Task.Domain;
+            const service = id.service as keyof typeof Task.Service;
+            const task = id.task as keyof typeof Task.Task;
+
+            const domainId = String(Task.Domain[domain]).padStart(3, '0');
+            const serviceId = String(Task.Service[service]).padStart(3, '0');
+            const taskId = String(Task.Task[task]).padStart(3, '0');
+            const code = `${domainId}-${serviceId}-${taskId}`
+            codes.push(code);
+        })
+
+        return codes;
+    }
+
+    export function generateTaskIdAuto(): string[] {
         const codes: string[] = [];
     
         // Object.keys에서 문자열 키만 필터링

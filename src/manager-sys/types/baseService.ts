@@ -16,7 +16,7 @@ export abstract class BaseService {
     protected abstract manager: ManagerService;
 
     protected async log(data: string, chain?: string){
-        const result: Log.IContext = {
+        const result: Log.LogData = {
             message: '',
         }
 
@@ -35,7 +35,7 @@ export abstract class BaseService {
     }
 
     protected async warn(data: string, chain?: string){
-        const result: Log.IContext = {
+        const result: Log.LogData = {
             message: ''
         };
 
@@ -55,7 +55,7 @@ export abstract class BaseService {
     protected async error(data: string | Error,
         chain?: string,
         errorStack?: number){
-        const result: Log.IContext = {
+        const result: Log.LogData = {
             message: '',
             stack: []
         };
@@ -85,10 +85,10 @@ export abstract class BaseService {
         const { domain, service, task } = data;
         const taskId = TaskId.convertToTaskId(domain, service, task);
         
-        if(!this.manager.isValidTask(taskId, Task.ExecutionType.TRIGGER)){
+        if(!this.manager.isValidTask({ taskId, exeType: Task.ExecutionType.TRIGGER })){
             throw new NotFoundException(`${taskId} not found`)
         }
-        if(this.manager.isRunning(taskId, Task.ExecutionType.TRIGGER)){
+        if(this.manager.isRunning({ taskId, exeType: Task.ExecutionType.TRIGGER })){
             throw new ConflictException(`${taskId} is already running`)
         }
         if(typeof this[task] === 'function'){

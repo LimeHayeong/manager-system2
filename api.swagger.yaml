@@ -11,7 +11,7 @@ tags:
   - name: log
     description: log query with filtering
   - name: statistic
-    description: statistic data
+    description: get statistic data
  
 paths:
   /${domain}/${service}/${task}/start:
@@ -58,6 +58,14 @@ paths:
                     code: 409
                     payload:
                       message: ${task} already executed
+
+  /work/${work}/start:
+    post:
+      tags:
+        - control
+      summary: (구현 예정)Start work
+      description: work controller
+      operationId: triggerWork
         
   /log/ctxid:
     get:

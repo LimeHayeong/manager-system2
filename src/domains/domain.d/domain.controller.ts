@@ -1,4 +1,27 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Post, UseFilters, UseInterceptors } from '@nestjs/common';
 
+import { ApiResponse } from 'src/manager-sys/types/api.response';
+import { CustomInterceptor } from 'src/manager-sys/global.interceptor';
+import { DomainDFirstService } from './domain.first.service';
+import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
+
+@UseFilters(HttpExceptionFilter)
 @Controller('domain/d')
-export class DomainDController {}
+@UseInterceptors(CustomInterceptor)
+export class DomainDController {
+    constructor(
+        private readonly firstService: DomainDFirstService,
+    ) {}
+
+    @Post('/firstService/processRT/start')
+    async triggerTask(): Promise<ApiResponse> {
+        const result = await this.firstService.triggerTask({ domain: 'DomainD', service: 'FirstService', task: 'processRT'});
+        return {
+            code: 200,
+            payload: {
+                message: null,
+                data: result,
+            }
+        }
+    }
+}

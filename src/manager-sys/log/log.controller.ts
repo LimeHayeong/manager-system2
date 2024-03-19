@@ -1,6 +1,5 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { LogService } from './log.service';
-import { Request, Response } from 'express';
 import { FilteringOptions, LogQuerybyContextIdDTO, LogQuerybyTaskIdDTO, LogResponseDTO, RecentLogQueryDTO } from './dto/log-query.dto';
 import { ApiResponse } from '../types/api.response';
 
@@ -13,89 +12,78 @@ export class LogController {
 
     @Get('/recent')
     async getRecentLogs(
-        @Req() req: Request,
-        @Res() res: Response,
         @Query() query: RecentLogQueryDTO,
-    ) {
+    ): Promise<ApiResponse> {
         const logs = await this.logService.getRecentLogs(query);
         const result: LogResponseDTO = {
             page: Number(logs.page),
-            limit: logs.limit,
-            totalCount: logs.totalCount,
+            limit: Number(logs.limit),
+            totalCount: Number(logs.totalCount),
             logs: logs.logs,
             filteringOptions: FilteringOptions,
         }
-        const response: ApiResponse = {
+        return {
             code: 200,
             payload: {
                 message: null,
                 data: result
             }
         }
-        res.status(200).json(response);
     }
 
     @Get('/ctxid')
     async getLogsByContextId(
-        @Req() req: Request,
-        @Res() res: Response,
         @Query() query: LogQuerybyContextIdDTO
-    ) {
+    ): Promise<ApiResponse> {
         const logs = await this.logService.getLogByContextIds(query);
         const result: LogResponseDTO = {
             ...logs,
             filteringOptions: FilteringOptions,
         }
-        const response: ApiResponse = {
+        return {
             code: 200,
             payload: {
                 message: null,
                 data: result
             }
         }
-        res.status(200).json(response);
     }
 
     @Get('/taskid')
     async getLogsByTaskId(
-        @Req() req: Request,
-        @Res() res: Response,
         @Query() query: LogQuerybyTaskIdDTO,
-    ) {
+    ): Promise<ApiResponse> {
         const logs = await this.logService.getLogsByTaskId(query);
         const result: LogResponseDTO = {
             ...logs,
             filteringOptions: FilteringOptions,
         }
-        const response: ApiResponse = {
+        return {
             code: 200,
             payload: {
                 message: null,
                 data: result
             }
         }
-        res.status(200).json(response);
+        
     }
 
     // 병렬처리 테스트용
     @Get('/taskid/test')
     async getLogsByTaskIdConcurrent(
-        @Req() req: Request,
-        @Res() res: Response,
         @Query() query: LogQuerybyTaskIdDTO,
-    ) {
+    ): Promise<ApiResponse> {
         const logs = await this.logService.getLogsByTaskIdAdvanced(query);
         const result: LogResponseDTO = {
             ...logs,
             filteringOptions: FilteringOptions,
         }
-        const response: ApiResponse = {
+       return {
             code: 200,
             payload: {
                 message: null,
                 data: result
             }
         }
-        res.status(200).json(response);
     }
 }

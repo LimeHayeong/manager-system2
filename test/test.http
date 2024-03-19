@@ -6,11 +6,14 @@
 ################## Controller test ##################
 #####################################################
 
-###
+### A-first
 POST http://{{URL}}:{{PORT}}/domain/a/firstService/processRT/start HTTP/1.1
-
-###
+ 
+### A-second
 POST http://{{URL}}:{{PORT}}/domain/a/secondService/processRT/start HTTP/1.1
+
+### D
+POST http://{{URL}}:{{PORT}}/domain/d/firstService/processRT/start HTTP/1.1
 
 #####################################################
 #################### Query test #####################
@@ -87,7 +90,7 @@ GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=1234&from=1710000000000&to=1711
 #####################################################
 
 ### Graphmode graph 1개 조회
-GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA&service=FirstService
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA
 
 ### GRID Mode 1개 조회
 
