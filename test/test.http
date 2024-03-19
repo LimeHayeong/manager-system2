@@ -92,10 +92,17 @@ GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=1234&from=1710000000000&to=1711
 ### Graphmode graph 1개 조회
 GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a
 
-### GRID Mode 1개 조회
+### GRID Mode domain.a 조회 (24*7, 4h)
 
-GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=domain.a&service=service&pointNumber=168&unitTime=4h
+GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=domain.a&pointNumber=168&unitTime=4h
 
-### Histogram 1개 조회
+### GRID Mode domain.d 조회 (24*7, 24h)
+GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=domain.d&pointNumber=168&unitTime=24h
 
-GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a&service=service&task=processRT&pointNumber=30&pointSize=10
+### Histogram domain.a 조회 (30*10)
+
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a&pointNumber=30&pointSize=10
+
+### Histogram domain.d 조회 (30*50)
+
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.d&pointNumber=30&pointSize=50

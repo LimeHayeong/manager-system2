@@ -141,8 +141,8 @@ paths:
                         limit: 100
                         totalCount: 693059
                         logs:
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -151,8 +151,8 @@ paths:
                               chain: "Chain_67"
                             level: "INFO"
                             timestamp: 1710730860032
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -179,13 +179,13 @@ paths:
           required: true
           schema:
             type: string
-            example: DomainA
+            example: domain.a
         - in: query
           name: service
           required: false
           schema:
             type: string
-            example: FirstService
+            example: service
         - in: query
           name: task
           required: false
@@ -237,8 +237,8 @@ paths:
                         limit: 100
                         totalCount: 103
                         logs:
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -247,8 +247,8 @@ paths:
                               chain: "Chain_67"
                             level: "INFO"
                             timestamp: 1710730860032
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -271,13 +271,13 @@ paths:
           required: true
           schema:
             type: string
-            example: DomainA
+            example: domain.a
         - in: query
           name: service
           required: false
           schema:
             type: string
-            example: FirstService
+            example: service
         - in: query
           name: task
           required: false
@@ -344,8 +344,8 @@ paths:
                         limit: 100
                         totalCount: 693059
                         logs:
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -354,8 +354,8 @@ paths:
                               chain: "Chain_67"
                             level: "INFO"
                             timestamp: 1710730860032
-                          - domain: "DomainA"
-                            service: "FirstService"
+                          - domain: "domain.a"
+                            service: "service"
                             task: "processRT"
                             contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
                             exeType: "CRON"
@@ -388,7 +388,7 @@ paths:
           required: true
           schema:
             type: string
-            example: DomainA
+            example: domain.a
         - in: query
           name: service
           required: false
@@ -431,11 +431,11 @@ paths:
                     payload:
                       message: null
                       data:
-                        domain: DomainA
-                        service: FirstService
+                        domain: domain.a
+                        service: service
                         pointNumber: 30
                         pointSize: 10
-                        data:
+                        pointData:
                           - from: 1710469270496
                             to: 1710469759020
                             info: 1656
@@ -466,13 +466,13 @@ paths:
           required: true
           schema:
             type: string
-            example: DomainD
+            example: domain.d
         - in: query
           name: service
           required: false
           schema:
             type: string
-            example: FirstService
+            example: service
         - in: query
           name: task
           required: false
@@ -512,12 +512,12 @@ paths:
                     payload:
                       message: null
                       data: 
-                        domain: DomainD
-                        service: FirstService
+                        domain: domain.d
+                        service: service
                         task: processRT
                         pointNumber: 168
                         unitTime: 4h
-                        data:
+                        pointData:
                           - from: 1710468000000
                             to: 1710482400000
                             info: 165712

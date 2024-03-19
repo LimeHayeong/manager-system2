@@ -75,8 +75,10 @@ export class StatisticService implements OnModuleInit {
             const exePipe = exeStatAggregationPipeline(firstId, lastId);
 
             // TODO: async하게 진행.
-            const timeStats = await this.logModel.aggregate(timePipe);
-            const exeStats = await this.logModel.aggregate(exePipe);
+            const [timeStats, exeStats] = await Promise.all([
+                this.logModel.aggregate(timePipe),
+                this.logModel.aggregate(exePipe)
+            ]);
             // console.log(timeStats[0], timeStats[timeStats.length - 1])
             // console.log(exeStats[0], exeStats[exeStats.length - 1])
 
@@ -125,7 +127,7 @@ export class StatisticService implements OnModuleInit {
             task,
             pointNumber: Number(pointNumber),
             pointSize: pointSize,
-            data: results
+            pointData: results
         }
     }
 
@@ -153,7 +155,7 @@ export class StatisticService implements OnModuleInit {
             task,
             pointNumber: Number(pointNumber),
             unitTime: unitTime,
-            data: results,
+            pointData: results,
         }
     }
 }

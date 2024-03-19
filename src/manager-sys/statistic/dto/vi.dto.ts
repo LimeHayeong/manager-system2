@@ -5,11 +5,11 @@ export interface ViTimeRequestbyTaskIdDTO extends taskId, ViTimeOptions {
 }
 
 export interface ViExeResponsebyTaskIdDTO extends taskId, ViExeOptions {
-    data: pointData[];
+    pointData: pointData[];
 }
 
 export interface ViTimeResponsebyTaskIdDTO extends taskId, ViTimeOptions {
-    data: pointData[];
+    pointData: pointData[];
 }
 
 export interface ViExeOptions {

@@ -129,9 +129,9 @@ export class LogService implements OnModuleInit {
 
         // 결과 및 총 개수 반환
         return {
-            page: page as number, 
-            limit: limit as number,
-            totalCount: totalCount as number,
+            page: Number(page), 
+            limit: Number(limit),
+            totalCount: Number(totalCount),
             logs: logs
         };
     }
@@ -206,9 +206,9 @@ export class LogService implements OnModuleInit {
 
         // 결과 및 총 개수 반환
         return {
-            page: page as number, 
-            limit: limit as number,
-            totalCount: totalCount as number,
+            page: Number(page), 
+            limit: Number(limit),
+            totalCount: Number(totalCount),
             logs: logs
         };
     }

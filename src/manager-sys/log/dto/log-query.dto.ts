@@ -45,10 +45,10 @@ export interface LogQuerybyContextIdDTO extends QueryOptions{
     contextId: string[] | string;
 }
 
-export interface LogQuerybyTaskIdData extends Omit<LogQuerybyTaskIdDTO, 'queryType'> {
+export interface LogQuerybyTaskIdData extends LogQuerybyTaskIdDTO {
 }
 
-export interface LogQuerybyContextIdData extends Omit<LogQuerybyContextIdDTO, 'queryType'> {
+export interface LogQuerybyContextIdData extends LogQuerybyContextIdDTO {
 }
 
 export interface QueryOptions {
