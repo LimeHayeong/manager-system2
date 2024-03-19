@@ -502,6 +502,23 @@ paths:
                             info: 6237
                             warn: 4866
                             error: 0
+        '400':
+          description: 잘못된 옵션 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                InvalidPointNumber:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point number
+                InvalidPointSize:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point size
         '404':
           description: 해당하는 데이터나 찾는 데이터가 없음.
           content:
@@ -601,6 +618,23 @@ paths:
                             info: 115971
                             warn: 111477
                             error: 0
+        '400':
+          description: 잘못된 옵션 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                InvalidPointNumber:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point number
+                InvalidUnitTime:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid unit time
         '404':
           description: 해당하는 데이터나 찾는 데이터가 없음.
           content:

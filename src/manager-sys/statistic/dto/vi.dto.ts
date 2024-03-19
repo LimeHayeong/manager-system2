@@ -4,7 +4,8 @@ export interface ViExeRequestbyTaskIdDTO extends taskId, ViExeOptions {
 export interface ViTimeRequestbyTaskIdDTO extends taskId, ViTimeOptions {
 }
 
-export interface ViExeResponsebyTaskIdDTO extends taskId, ViExeOptions {
+export interface ViExeResponsebyTaskIdDTO extends taskId, Omit<ViExeOptions, 'pointSize'> {
+    pointSize: number;
     pointData: pointData[];
 }
 

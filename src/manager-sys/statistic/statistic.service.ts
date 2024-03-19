@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import mongoose, { Model } from 'mongoose';
 import { IExeStatisticDoc, IMetaDoc, ITimeStatisticDoc } from '../database/dto/statistic.interface';
 import { ILogDoc } from '../database/dto/log.interface';
@@ -101,7 +101,10 @@ export class StatisticService implements OnModuleInit {
     }
 
     public async getExeStatisticByTaskId(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResponsebyTaskIdDTO> {
-        const { domain, service, task, pointNumber = 30, pointSize = 10 } = query;
+        const { domain, service, task, pointNumber = 30 as number, pointSize = 10 } = query;
+
+        if(pointNumber > 168 || pointNumber < 0) throw new BadRequestException('Invalid point number')
+        if(!([10, 30, 50].includes(pointSize))) throw new BadRequestException('Invalid point size')
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
         
@@ -134,13 +137,16 @@ export class StatisticService implements OnModuleInit {
             service,
             task,
             pointNumber: Number(pointNumber),
-            pointSize: pointSize,
+            pointSize: Number(pointSize),
             pointData: results
         }
     }
 
     public async getTimeStatisticByTaskId(query: ViTimeRequestbyTaskIdDTO): Promise<ViTimeResponsebyTaskIdDTO> {
-        const { domain, service, task, pointNumber = 30, unitTime = '4h'} = query;
+        const { domain, service, task, pointNumber = 30 as number, unitTime = '4h'} = query;
+
+        if(pointNumber > 168 || pointNumber < 0) throw new BadRequestException('Invalid point number')
+        if(!(['30m', '1h', '4h', '6h', '12h', '24h'].includes(unitTime))) throw new BadRequestException('Invalid unit time')
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
 

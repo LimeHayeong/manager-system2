@@ -64,6 +64,12 @@ GET http://{{URL}}:{{PORT}}/log/taskid/test?&domain=domain.d&service=service&tas
 ### taskId 전범위 검색 특정 체인 1개
 GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.a&service=service&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
 
+### domain b 전범위
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.b&service=service&task=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
+### domain c 전범위
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.c&service=service&task=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
+
+
 
 
 ### taskId 전범위 검색 특정 체인 2개 포함 30번째 page
@@ -90,8 +96,7 @@ GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=1234&from=1710000000000&to=1711
 #####################################################
 
 ### Graphmode graph 1개 조회
-GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a
-
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a&pointSize=30
 
 ### GRID Mode domain.a 조회 (24*7, 30m)
 GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=domain.a&pointNumber=168&unitTime=30m
