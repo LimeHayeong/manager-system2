@@ -41,7 +41,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
               examples:
-                notFound:
+                TaskNotFound:
                   value:
                     code: 404
                     payload:
@@ -53,7 +53,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
               examples:
-                notFound:
+                TaskAlreadyExecuted:
                   value:
                     code: 409
                     payload:
@@ -165,6 +165,23 @@ paths:
                           exeTypes: [CRON, TRIGGER, WORK]
                           levels: [INFO, WARN, ERROR]
                           chains: []
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found              
 
   /log/recent:
     get:
@@ -257,6 +274,28 @@ paths:
                               chain: "Chain_4"
                             level: "INFO"
                             timestamp: 1710730860032
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found
 
   /log/taskid:
     get:
@@ -368,6 +407,23 @@ paths:
                           exeTypes: [CRON, TRIGGER, WORK]
                           levels: [INFO, WARN, ERROR]
                           chains: []
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found
 
   /stat/exe/ctxid:
     get:
@@ -446,6 +502,23 @@ paths:
                             info: 6237
                             warn: 4866
                             error: 0
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
 
   /stat/time/ctxid:
     get:
@@ -528,6 +601,23 @@ paths:
                             info: 115971
                             warn: 111477
                             error: 0
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                TimeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Time exe stats not found
 
 components:
   schemas:

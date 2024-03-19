@@ -17,9 +17,7 @@ export class DomainAController {
 
     @Post('/service/processRT/start')
     async triggerTask(): Promise<ApiResponse> {
-        console.log('triggerTask');
         const result = await this.firstService.triggerTask({ domain: 'domain.a', service: 'service', task: 'processRT'});
-        console.log(result);
         return {
             code: 200,
             payload: {

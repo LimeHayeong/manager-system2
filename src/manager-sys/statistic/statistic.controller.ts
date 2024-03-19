@@ -1,10 +1,14 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseFilters, UseInterceptors } from '@nestjs/common';
 
 import { ApiResponse } from '../types/api.response';
 import { StatisticService } from './statistic.service';
 import { ViExeRequestbyTaskIdDTO, ViExeResponsebyTaskIdDTO, ViTimeRequestbyTaskIdDTO, ViTimeResponsebyTaskIdDTO } from './dto/vi.dto';
+import { HttpExceptionFilter } from '../http.exception.filter';
+import { CustomInterceptor } from '../global.interceptor';
 
+@UseFilters(HttpExceptionFilter)
 @Controller('stat')
+@UseInterceptors(CustomInterceptor)
 export class StatisticController {
     constructor(
         private readonly service: StatisticService,

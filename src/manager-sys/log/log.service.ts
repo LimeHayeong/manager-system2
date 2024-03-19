@@ -1,10 +1,9 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ILogDoc } from '../database/dto/log.interface';
 import { Model } from 'mongoose';
 import { IExeStatisticDoc } from '../database/dto/statistic.interface';
 import { TaskId } from '../types/taskId';
 import { LogQuerybyContextIdData, LogQuerybyTaskIdData, LogResultDTO, RecentLogQueryDTO, ResultLog } from './dto/log-query.dto';
-import { Helper } from '../util/helper';
 import { QueryBuilder } from '../database/queries/mongodb.query.builder';
 
 const difference: number = 1000 * 60 * 60 * 1;
@@ -38,13 +37,13 @@ export class LogService implements OnModuleInit {
         // });
     }
 
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getRecentLogs(query: RecentLogQueryDTO): Promise<LogResultDTO> {
         const { domain, service, task, exeType, beforeCount = 1, page = 1, limit = 100 } = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
-        // console.log(conditions);
+        if(!conditions) {
+            throw new NotFoundException(`Task not found`)
+        }
 
         const exeStats = await this.exeStatisticModel
             .find(conditions)
@@ -56,6 +55,9 @@ export class LogService implements OnModuleInit {
             .exec();
 
         const targetDoc = exeStats[0];
+        if(!targetDoc) {
+            throw new NotFoundException(`Task exe statistic not found`)
+        }
 
         // console.log(targetDoc)
         const conditions2 = {}
@@ -66,16 +68,20 @@ export class LogService implements OnModuleInit {
         const cond2WithOptions = QueryBuilder.filterOptionsConditionBuilder(conditions2, exeType, null, null);
         // console.log(cond2WithOptions)
 
-        const totalCount = await this.logModel.countDocuments(cond2WithOptions);
-
-        const queryData = await this.logModel
-            .find(cond2WithOptions)
+        const totalCountPromise = this.logModel.countDocuments(cond2WithOptions);
+        const logsPromise = this.logModel.find(cond2WithOptions)
             .sort({ timestamp: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
             .select('taskId contextId exeType level data timestamp')
             .lean()
             .exec()
+
+        const [totalCount, queryData] = await Promise.all([totalCountPromise, logsPromise])
+
+        if(totalCount === 0) {
+            throw new NotFoundException(`Logs not found`)
+        }
 
         const logs = this.transformDocToLog(queryData);
 
@@ -93,20 +99,19 @@ export class LogService implements OnModuleInit {
 
     // TODO: 이렇게 하는 게 맞긴한데, startAt이 지정이 안되어 있으니까 전체를 parsing하느라 성능이 떨어짐.
     // 먼저 contextId에서 startAt, endAt 리스트를 뽑아오는게 낫지 않을까? from, to 오차에 주의하긴 해야함.
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getLogsByTaskId(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
-        // console.log(query)
         const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
+        if(!conditions) {
+            throw new NotFoundException(`Task not found`)
+        }
 
         if(from && to){
             conditions['timestamp'] = { $gte: from, $lte: to };
         }
         
         const condWithOptions = QueryBuilder.filterOptionsConditionBuilder(conditions, exeType, level, chain);
-        // console.log(condWithOptions);
 
         const totalCountPromise = this.logModel.countDocuments(condWithOptions);
         const logsPromise = this.logModel
@@ -122,10 +127,13 @@ export class LogService implements OnModuleInit {
 
         const logs = this.transformDocToLog(queryData);
 
+        if(totalCount === 0) {
+            throw new NotFoundException(`Logs not found`)
+        }
+
         // console.log(totalCount)
         // logs.forEach(log => console.log(log));
         // console.log(logs.length);
-        
 
         // 결과 및 총 개수 반환
         return {
@@ -136,13 +144,14 @@ export class LogService implements OnModuleInit {
         };
     }
 
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getLogsByTaskIdAdvanced(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
         // console.log(query)
         const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
+        if(!conditions) {
+            throw new NotFoundException(`Task not found`)
+        }
 
         if(from){
             conditions['startAt'] = { $gte: Number(from) - Number(difference) };
@@ -155,6 +164,10 @@ export class LogService implements OnModuleInit {
             .select('taskId startAt endAt')
             .lean()
             .exec();
+
+        if(exeStats.length === 0) {
+            throw new NotFoundException(`Task exe stats not found`)
+        }
 
         const timestamps = exeStats.map((exeStat) => 
             ({ $gte: exeStat.startAt, $lte: exeStat.endAt }));
@@ -193,6 +206,10 @@ export class LogService implements OnModuleInit {
         const totalCount = queryData.reduce((acc, cur) => acc + cur.length, 0);
         const Alllogs = queryData.flat();
 
+        if(totalCount === 0) {
+            throw new NotFoundException(`Logs not found`)
+        }
+
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
         const logsForPage = Alllogs.slice(startIndex, endIndex);
@@ -213,8 +230,6 @@ export class LogService implements OnModuleInit {
         };
     }
 
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getLogByContextIds(query: LogQuerybyContextIdData): Promise<LogResultDTO> {
         const { contextId, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
@@ -236,6 +251,9 @@ export class LogService implements OnModuleInit {
             .exec();
 
         // console.log(exeStats);
+        if(exeStats.length === 0) {
+            throw new NotFoundException(`Task exe stats not found`)
+        }
 
         const conditions2 = {}
 
@@ -258,6 +276,10 @@ export class LogService implements OnModuleInit {
             .select('taskId contextId exeType level data timestamp')
             .lean()
             .exec()
+
+        if(queryData.length === 0) {
+            throw new NotFoundException(`Logs not found`)
+        }
 
         const logs = this.transformDocToLog(queryData);
 

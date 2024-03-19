@@ -126,52 +126,26 @@ export function viExeAggregationPipeline(conditions: object, pointSize: number, 
   ]
 }
 
-export function viTimeAggregationPipeline(conditions: object, unitTime: string, i: number): any[] {
-  const pointSize = getPointSizefromUnitTime(unitTime);
-
+export function viTimeAggregationPipeline(conditions: object, from: number, to: number): any[] {
   return [
     { $match: conditions },
+    { $match: { timestamp: { $gte: from, $lt: to } }},
     { $sort: { timestamp: 1 }},
-    { $skip: pointSize * i },
-    { $limit: pointSize },
     {
       $group: {
         _id: null,
-        from: { $min: "$timestamp" },
-        to: { $max: "$timestamp" },
         info: { $sum: "$data.info" },
         warn: { $sum: "$data.warn" },
         error: { $sum: "$data.error" }
       }
     },
     {
-      $addFields: {
-        to: { $add: ["$to", 30 * 60 * 1000] }
-      }
-    },
-    {
       $project: {
           _id: 0,
-          from: 1,
-          to: 1,
           info: 1,
           warn: 1,
           error: 1
       }
     }
   ]
-}
-
-function getPointSizefromUnitTime(timeStr: string): number {
-  // 시간을 분으로 변환
-  let timeInMinutes: number = 0;
-  if (timeStr.includes('h')) {
-      timeInMinutes = parseInt(timeStr.replace('h', '')) * 60;
-  } else if (timeStr.includes('m')) {
-      timeInMinutes = parseInt(timeStr.replace('m', ''));
-  }
-
-  // 30분 단위로 나눈 몫 계산
-  const quotient: number = Math.floor(timeInMinutes / 30);
-  return quotient;
 }

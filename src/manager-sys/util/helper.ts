@@ -144,6 +144,7 @@ export namespace Helper {
             try {
                 return await originalMethod.apply(this, args);
             } catch (e) {
+                console.log('[System] Error in ', propertyName);
                 console.error(e);
             }
         }

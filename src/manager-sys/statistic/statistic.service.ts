@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import mongoose, { Model } from 'mongoose';
 import { IExeStatisticDoc, IMetaDoc, ITimeStatisticDoc } from '../database/dto/statistic.interface';
 import { ILogDoc } from '../database/dto/log.interface';
@@ -100,25 +100,33 @@ export class StatisticService implements OnModuleInit {
         this.staticRunning = false;
     }
 
-    
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getExeStatisticByTaskId(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResponsebyTaskIdDTO> {
         const { domain, service, task, pointNumber = 30, pointSize = 10 } = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
+        
+        if(!conditions) {
+            throw new NotFoundException(`Task not found`)
+        }
 
         const results = [];
         for (let i = 0; i < pointNumber; i++) {
             const aggregateSteps = viExeAggregationPipeline(conditions, Number(pointSize), i)
     
             // 현재 반복에 대한 집계 결과를 가져옵니다.
-            const exeStats = await this.exeStatisticModel.aggregate(aggregateSteps);
+            let exeStats;
+            try {
+                exeStats = await this.exeStatisticModel.aggregate(aggregateSteps);
+            } catch (e) {}
     
             // 결과가 있을 경우 배열에 추가합니다.
             if (exeStats && exeStats.length > 0) {
                 results.push(exeStats[0]); // exeStats는 배열이므로 첫 번째 요소만 추가합니다.
             }
+        }
+
+        if(results.length === 0) {
+            throw new NotFoundException(`Task exe statistic not found`)
         }
 
         return {
@@ -131,22 +139,46 @@ export class StatisticService implements OnModuleInit {
         }
     }
 
-    // @Helper.ExecutionTimerAsync
-    @Helper.SimpleErrorHandling
     public async getTimeStatisticByTaskId(query: ViTimeRequestbyTaskIdDTO): Promise<ViTimeResponsebyTaskIdDTO> {
         const { domain, service, task, pointNumber = 30, unitTime = '4h'} = query;
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
 
+        if(!conditions) {
+            throw new NotFoundException(`Task not found`)
+        }
+
         const results = [];
+
+        const currentTime = Date.now();
+        const size = this.getPointSizefromUnitTime(unitTime)
+        const interval = size * 1000 * 60 * 30
+
+        const cleanTime = currentTime - (currentTime % interval)
+
         for (let i = 0; i < pointNumber; i++) {
-            const aggregateSteps = viTimeAggregationPipeline(conditions, unitTime, i)
+            const fromNow = cleanTime - (i * interval)
+            const toNow = (i === 0) ? currentTime : cleanTime - ((i-1) * interval)
+            
+            const aggregateSteps = viTimeAggregationPipeline(conditions, fromNow, toNow - 1)
     
-            const timeStats = await this.timeStatisticModel.aggregate(aggregateSteps);
+            let timeStats;
+            try {
+                timeStats = await this.timeStatisticModel.aggregate(aggregateSteps);
+            } catch(e){}
     
-            if (timeStats && timeStats.length > 0) {
-                results.push(timeStats[0]); // timeStats는 배열이므로 첫 번째 요소만 추가합니다.
-            }
+            const stats = (timeStats && timeStats.length > 0) ? timeStats[0] : null;
+            results.push({
+                from: fromNow,
+                to: toNow,
+                info: stats ? stats.info : 0,
+                warn: stats ? stats.warn : 0,
+                error: stats ? stats.error : 0
+            });
+        }
+
+        if(results.length === 0) {
+            throw new NotFoundException(`Time exe statistic not found`)
         }
 
         return {
@@ -158,4 +190,18 @@ export class StatisticService implements OnModuleInit {
             pointData: results,
         }
     }
+
+    private getPointSizefromUnitTime(timeStr: string): number {
+        // 시간을 분으로 변환
+        let timeInMinutes: number = 0;
+        if (timeStr.includes('h')) {
+            timeInMinutes = parseInt(timeStr.replace('h', '')) * 60;
+        } else if (timeStr.includes('m')) {
+            timeInMinutes = parseInt(timeStr.replace('m', ''));
+        }
+      
+        // 30분 단위로 나눈 몫 계산
+        const quotient: number = Math.floor(timeInMinutes / 30);
+        return quotient;
+      }
 }

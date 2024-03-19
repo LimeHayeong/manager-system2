@@ -1,9 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseFilters, UseInterceptors } from '@nestjs/common';
 import { LogService } from './log.service';
 import { FilteringOptions, LogQuerybyContextIdDTO, LogQuerybyTaskIdDTO, LogResponseDTO, RecentLogQueryDTO } from './dto/log-query.dto';
 import { ApiResponse } from '../types/api.response';
+import { HttpExceptionFilter } from '../http.exception.filter';
+import { CustomInterceptor } from '../global.interceptor';
 
+@UseFilters(HttpExceptionFilter)
 @Controller('log')
+@UseInterceptors(CustomInterceptor)
 export class LogController {
     constructor(
         private readonly logService: LogService,
