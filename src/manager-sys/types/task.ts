@@ -1,19 +1,19 @@
 export namespace Task {     
     export enum Domain {
-        DomainA = 1,
-        DomainB,
-        DomainC,
-        DomainD
+        "domain.a" = 1,
+        "domain.b",
+        "domain.c",
+        "domain.d"
     }
 
     export enum Service {
-        FirstService = 1,
-        SecondService,
+        "service" = 1,
+        "second-service",
     }
 
     export enum Task {
-        processRT = 1,
-        processStore = 2,
+        "processRT" = 1,
+        "processStore",
     }
 
     export enum ExecutionType {

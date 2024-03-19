@@ -7,39 +7,39 @@
 #####################################################
 
 ### A-first
-POST http://{{URL}}:{{PORT}}/domain/a/firstService/processRT/start HTTP/1.1
+POST http://{{URL}}:{{PORT}}/domain.a/service/processRT/start HTTP/1.1
  
 ### A-second
-POST http://{{URL}}:{{PORT}}/domain/a/secondService/processRT/start HTTP/1.1
+POST http://{{URL}}:{{PORT}}/domain.a/second-service/processRT/start HTTP/1.1
 
 ### D
-POST http://{{URL}}:{{PORT}}/domain/d/firstService/processRT/start HTTP/1.1
+POST http://{{URL}}:{{PORT}}/domain.d/service/processRT/start HTTP/1.1
 
 #####################################################
 #################### Query test #####################
 #####################################################
 
 ### Histogram page에서 최근 Log 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a HTTP/1.1
 
-### DominA-FirstService 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService HTTP/1.1
+### domain.a-service 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a&service=service HTTP/1.1
 
-### DomainA-SecondService 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=SecondService HTTP/1.1
+### domain.a-second-service 조회
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a&service=second-service HTTP/1.1
 
 ### 특정 taskId 1개 전 꺼 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a&service=service&task=processRT HTTP/1.1
 
 ### 특정 taskId 2개 전 꺼 2page 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT&beforeCount=2&page=2 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a&service=service&task=processRT&beforeCount=2&page=2 HTTP/1.1
 
 ### domainD, error 보기용
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainD&service=FirstService&task=processRT&beforeCount=2&page=6 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.d&service=service&task=processRT&beforeCount=2&page=6 HTTP/1.1
 
 
 ### 특정 taskId 2개 전 꺼 3page 조회
-GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=processRT&beforeCount=2&page=3 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/recent?domain=domain.a&service=service&task=processRT&beforeCount=2&page=3 HTTP/1.1
 
 
 
@@ -47,27 +47,27 @@ GET http://{{URL}}:{{PORT}}/log/recent?domain=DomainA&service=FirstService&task=
 
 ### taskId 전범위 검색
 
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.a&service=service&task=processRT&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, level error
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.d&service=service&task=processRT&level=ERROR&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, level error, warn
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.d&service=service&task=processRT&level=ERROR&level=WARN&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, 특정 체인 2개, level error, warn
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.d&service=service&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색, 특정 체인 2개, level error, warn (병렬처리)
-GET http://{{URL}}:{{PORT}}/log/taskid/test?&domain=DomainD&service=FirstService&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid/test?&domain=domain.d&service=service&task=processRT&level=ERROR&level=WARN&chain=Chain_4830&chain=Chain_4765&from=1710000000000&to=1711000000000 HTTP/1.1
 
 ### taskId 전범위 검색 특정 체인 1개
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.a&service=service&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16 HTTP/1.1
 
 
 
 ### taskId 전범위 검색 특정 체인 2개 포함 30번째 page
-GET http://{{URL}}:{{PORT}}/log/taskid?&domain=DomainA&service=FirstService&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16&chain=Chain_0&page=30 HTTP/1.1
+GET http://{{URL}}:{{PORT}}/log/taskid?&domain=domain.a&service=service&task=processRT&from=1710000000000&to=1711000000000&chain=Chain_16&chain=Chain_0&page=30 HTTP/1.1
 
 
 ### contextId 전범위 검색 1
@@ -90,12 +90,12 @@ GET http://{{URL}}:{{PORT}}/log/ctxid?&contextId=1234&from=1710000000000&to=1711
 #####################################################
 
 ### Graphmode graph 1개 조회
-GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a
 
 ### GRID Mode 1개 조회
 
-GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=DomainA&service=FirstService&pointNumber=168&unitTime=4h
+GET http://{{URL}}:{{PORT}}/stat/time/taskid?domain=domain.a&service=service&pointNumber=168&unitTime=4h
 
 ### Histogram 1개 조회
 
-GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=DomainA&service=FirstService&task=processRT&pointNumber=30&pointSize=10
+GET http://{{URL}}:{{PORT}}/stat/exe/taskid?domain=domain.a&service=service&task=processRT&pointNumber=30&pointSize=10

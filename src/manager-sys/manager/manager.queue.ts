@@ -2,11 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { Model } from "mongoose";
 import { ILogDoc } from "../database/dto/log.interface";
 import { Log } from "../types/log";
-import { log } from "console";
 
 const logInterval = 1000 * 60; // 1분
 const consoleInterval = 1000 * 10; // 10초
 const bufferSize = 500;
+const retryLimit = 2;
 
 @Injectable()
 export class ManagerQueue {

@@ -83,7 +83,9 @@ export abstract class BaseService {
     // HTTP CONTEXT
     async triggerTask(data: TaskStartRequestDTO): Promise<string> {
         const { domain, service, task } = data;
+        console.log(data);
         const taskId = TaskId.convertToTaskId(domain, service, task);
+        console.log(taskId);
         
         if(!this.manager.isValidTask({ taskId, exeType: Task.ExecutionType.TRIGGER })){
             throw new NotFoundException(`${taskId} not found`)

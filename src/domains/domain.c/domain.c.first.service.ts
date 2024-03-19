@@ -17,7 +17,7 @@ export class DomainCFirstService extends BaseService {
     }
 
     @Cron('0 * */1 * * *')
-    @UseCls(Helper.clsBuilder('DomainC', 'FirstService', 'processRT'))
+    @UseCls(Helper.clsBuilder('domain.c', 'service', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         await delay(5, 40);

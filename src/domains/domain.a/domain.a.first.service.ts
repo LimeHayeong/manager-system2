@@ -25,7 +25,7 @@ export class DomainAFirstService extends BaseService implements OnModuleInit{
     }
 
     @Cron('0/30 * * * * *')
-    @UseCls(Helper.clsBuilder('DomainA', 'FirstService', 'processRT'))
+    @UseCls(Helper.clsBuilder('domain.a', 'service', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         const promiseInfo = [];
@@ -55,7 +55,7 @@ export class DomainAFirstService extends BaseService implements OnModuleInit{
     }
 
     @Cron('0/30 * * * * *')
-    @UseCls(Helper.clsBuilder('DomainA', 'FirstService', 'processStore'))
+    @UseCls(Helper.clsBuilder('domain.a', 'service', 'processStore'))
     @Helper.AutoTaskManage
     public async processStore(context?: string) {
         const promiseInfo = [];

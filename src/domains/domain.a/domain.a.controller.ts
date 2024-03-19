@@ -7,7 +7,7 @@ import { DomainASecondService } from './domain.a.second.service';
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 
 @UseFilters(HttpExceptionFilter)
-@Controller('domain/a')
+@Controller('domain.a')
 @UseInterceptors(CustomInterceptor)
 export class DomainAController {
     constructor(
@@ -15,9 +15,11 @@ export class DomainAController {
         private readonly secondService: DomainASecondService,
     ) {}
 
-    @Post('/firstService/processRT/start')
+    @Post('/service/processRT/start')
     async triggerTask(): Promise<ApiResponse> {
-        const result = await this.firstService.triggerTask({ domain: 'DomainA', service: 'FirstService', task: 'processRT'});
+        console.log('triggerTask');
+        const result = await this.firstService.triggerTask({ domain: 'domain.a', service: 'service', task: 'processRT'});
+        console.log(result);
         return {
             code: 200,
             payload: {
@@ -27,9 +29,9 @@ export class DomainAController {
         }
     }
 
-    @Post('/secondService/processRT/start')
+    @Post('/second-service/processRT/start')
     async triggerTask2():Promise<ApiResponse> {
-        const result = await this.secondService.triggerTask({ domain: 'DomainA', service: 'SecondService', task: 'processRT'});
+        const result = await this.secondService.triggerTask({ domain: 'domain.a', service: 'second-service', task: 'processRT'});
         return {
             code: 200,
             payload: {

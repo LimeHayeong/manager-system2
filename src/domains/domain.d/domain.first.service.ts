@@ -19,7 +19,7 @@ export class DomainDFirstService extends BaseService {
     }
 
     @Cron('0 */5 * * * *')
-    @UseCls(Helper.clsBuilder('DomainD', 'FirstService', 'processRT'))
+    @UseCls(Helper.clsBuilder('domain.d', 'service', 'processRT'))
     @Helper.AutoTaskManage
     public async processRT(context?: string) {
         const chains = Array.from({ length: 5000 }, (_, i) => `Chain_${i + 1}`);

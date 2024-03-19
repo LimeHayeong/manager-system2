@@ -1,4 +1,4 @@
 import { Controller } from '@nestjs/common';
 
-@Controller('domain/c')
+@Controller('domain.c')
 export class DomainCController {}

@@ -5,44 +5,44 @@ import { Task } from "./task";
 export namespace TaskId {
     export const TaskIds = [
         {
-            domain: 'DomainA',
-            service: 'FirstService',
+            domain: 'domain.a',
+            service: 'service',
             task: 'processRT',
             exeTypes: ['TRIGGER', 'CRON']
         },
         {
-            domain: 'DomainA',
-            service: 'FirstService',
+            domain: 'domain.a',
+            service: 'service',
             task: 'processStore',
             exeTypes: ['CRON']
         },
         {
-            domain: 'DomainA',
-            service: 'SecondService',
+            domain: 'domain.a',
+            service: 'second-service',
             task: 'processRT',
             exeTypes: ['TRIGGER', 'CRON']
         },
         {
-            domain: 'DomainA',
-            service: 'SecondService',
+            domain: 'domain.a',
+            service: 'second-service',
             task: 'processStore',
             exeTypes: ['CRON']
         },
         {
-            domain: 'DomainB',
-            service: 'FirstService',
+            domain: 'domain.c',
+            service: 'service',
             task: 'processRT',
             exeTypes: ['CRON']
         },
         {
-            domain: 'DomainC',
-            service: 'FirstService',
+            domain: 'domain.c',
+            service: 'service',
             task: 'processRT',
             exeTypes: ['CRON']
         },
         {
-            domain: 'DomainD',
-            service: 'FirstService',
+            domain: 'domain.d',
+            service: 'service',
             task: 'processRT',
             exeTypes: ['CRON', 'TRIGGER']
         }

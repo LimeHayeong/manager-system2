@@ -6,16 +6,16 @@ import { DomainDFirstService } from './domain.first.service';
 import { HttpExceptionFilter } from 'src/manager-sys/http.exception.filter';
 
 @UseFilters(HttpExceptionFilter)
-@Controller('domain/d')
+@Controller('domain.d')
 @UseInterceptors(CustomInterceptor)
 export class DomainDController {
     constructor(
         private readonly firstService: DomainDFirstService,
     ) {}
 
-    @Post('/firstService/processRT/start')
+    @Post('/service/processRT/start')
     async triggerTask(): Promise<ApiResponse> {
-        const result = await this.firstService.triggerTask({ domain: 'DomainD', service: 'FirstService', task: 'processRT'});
+        const result = await this.firstService.triggerTask({ domain: 'domain.d', service: 'service', task: 'processRT'});
         return {
             code: 200,
             payload: {
