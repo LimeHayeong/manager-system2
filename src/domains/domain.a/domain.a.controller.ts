@@ -27,9 +27,33 @@ export class DomainAController {
         }
     }
 
+    @Post('/service/processStore/start')
+    async triggerTask2(): Promise<ApiResponse> {
+        const result = await this.firstService.triggerTask({ domain: 'domain.a', service: 'service', task: 'processStore'});
+        return {
+            code: 200,
+            payload: {
+                message: null,
+                data: result,
+            }
+        }
+    }
+
     @Post('/second-service/processRT/start')
-    async triggerTask2():Promise<ApiResponse> {
+    async triggerTask3():Promise<ApiResponse> {
         const result = await this.secondService.triggerTask({ domain: 'domain.a', service: 'second-service', task: 'processRT'});
+        return {
+            code: 200,
+            payload: {
+                message: null,
+                data: result,
+            }
+        }
+    }
+
+    @Post('/second-service/processStore/start')
+    async triggerTask4():Promise<ApiResponse> {
+        const result = await this.secondService.triggerTask({ domain: 'domain.a', service: 'second-service', task: 'processStore'});
         return {
             code: 200,
             payload: {

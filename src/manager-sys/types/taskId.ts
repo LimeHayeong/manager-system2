@@ -14,7 +14,7 @@ export namespace TaskId {
             domain: 'domain.a',
             service: 'service',
             task: 'processStore',
-            exeTypes: ['CRON']
+            exeTypes: ['TRIGGER','CRON']
         },
         {
             domain: 'domain.a',
@@ -26,19 +26,19 @@ export namespace TaskId {
             domain: 'domain.a',
             service: 'second-service',
             task: 'processStore',
-            exeTypes: ['CRON']
+            exeTypes: ['TRIGGER', 'CRON']
+        },
+        {
+            domain: 'domain.b',
+            service: 'service',
+            task: 'processRT',
+            exeTypes: ['TRIGGER', 'CRON']
         },
         {
             domain: 'domain.c',
             service: 'service',
             task: 'processRT',
-            exeTypes: ['CRON']
-        },
-        {
-            domain: 'domain.c',
-            service: 'service',
-            task: 'processRT',
-            exeTypes: ['CRON']
+            exeTypes: ['TRIGGER', 'CRON']
         },
         {
             domain: 'domain.d',
