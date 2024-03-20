@@ -1,13 +1,28 @@
 export interface WebSocketResponse {
-    success: boolean;
-    statusCode: number;
-    responseId: string;
-    payload: object | null;
+  code: number
+  responseId: string
+  payload: {
+      message: string | null
+      data: any | null
+  }
+}
+  
+export interface WebSocketError {
+  code: number
+  responseId: string;
+  payload: {
+      message: string | null
+      error: string | string[] | null
+  }
 }
 
-export interface WebSocketError {
-    success: boolean;
-    statusCode: number;
-    responseId: string;
-    error: string | Error | null;
+export class wsError extends Error{
+  constructor(
+    message?: string,
+    code?: number
+  ){
+    super(message)
+    this.code = code;
+  }
+  code: number;
 }

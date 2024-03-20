@@ -1,14 +1,15 @@
-import { LoggerModule } from '../logger/logger.module';
-import { ManagerController } from './manager.controller';
-import { ManagerService } from './manager.service';
-import { ManagerStatistic } from './manager.statistic';
-import { Module } from '@nestjs/common';
-import { WsReceiveModule } from 'src/ws/receive/ws.receive.module';
+import { DatabaseModule } from '../database/database.module';
+import { LogModule } from '../log/log.module';
+import { ManagerQueue } from "./manager.queue";
+import { ManagerService } from "./manager.service";
+import { Module } from "@nestjs/common";
+import { WsPushModule } from 'src/ws/push/ws.push.module';
+import { managersProviders } from './manager.providers';
 
 @Module({
-  imports: [LoggerModule, WsReceiveModule],
-  providers: [ManagerService, ManagerStatistic],
-  controllers: [ManagerController],
-  exports: [ManagerService]
+    imports: [DatabaseModule, LogModule, WsPushModule],
+    providers: [ManagerService, ManagerQueue,
+    ...managersProviders],
+    exports: [ManagerService]
 })
 export class ManagerModule {}

@@ -1,20 +1,26 @@
-import { TaskActivateRequestDTO, TaskStartRequestDTO, TaskStatisticRequestDTO } from "src/manager-sys/common-dto/task-control.dto";
+import { ConflictException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 
 import { ClsService } from "nestjs-cls";
+import { Log } from "./log";
 import { ManagerService } from "../manager/manager.service";
-import { NotFoundException } from "@nestjs/common";
 import { Task } from "./task";
+import { TaskId } from "./taskId";
+import { TaskStartRequestDTO } from "../common-dto/task-control.dto";
+import { trimErrorStack } from "../util/error";
+
+const ErrorStackLength = 4;
+const maxErrorStackLength = 7;
 
 export abstract class BaseService {
     protected abstract cls: ClsService;
-    protected abstract managerService: ManagerService;
-  
-    protected async log(data: string, chain?: string) {
-        const result: Task.IContext = {
+    protected abstract manager: ManagerService;
+
+    protected async log(data: string, chain?: string){
+        const result: Log.LogData = {
             message: '',
         }
-        
-        const context = this.cls.get('context');
+
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
@@ -22,18 +28,18 @@ export abstract class BaseService {
         if(chain){
             result.chain = chain;
         }
-        
+
         const workId = this.cls.get('workId');
 
-        await this.managerService.logTask(context, result, Task.LogLevel.INFO, workId);
+        await this.manager.logTask(taskId, Log.Level.INFO, Task.ExecutionType[exeType], result, workId);
     }
 
-    protected async warn(data: string, chain?: string) {
-        const result: Task.IContext = {
+    protected async warn(data: string, chain?: string){
+        const result: Log.LogData = {
             message: ''
         };
 
-        const context = this.cls.get('context');
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
@@ -43,69 +49,53 @@ export abstract class BaseService {
         }
 
         const workId = this.cls.get('workId');
-        await this.managerService.logTask(context, result, Task.LogLevel.WARN, workId);
+        await this.manager.logTask(taskId, Log.Level.WARN, Task.ExecutionType[exeType], result, workId);
     }
 
     protected async error(data: string | Error,
         chain?: string,
-        errorStack: number = 4
-    ) {
-        const result: Task.IContext = {
+        errorStack?: number){
+        const result: Log.LogData = {
             message: '',
             stack: []
         };
 
-        if(errorStack < 0) errorStack = 4;
-        if(errorStack > 7) errorStack = 7;
+        if(errorStack === undefined) errorStack = ErrorStackLength;
+        else if(errorStack > maxErrorStackLength) errorStack = maxErrorStackLength;
+        else if(errorStack < 0) errorStack = ErrorStackLength;
 
-        const context = this.cls.get('context');
+        const { taskId, exeType } = this.cls.get('context');
 
         if(typeof data === 'string') {
             result.message = data;
         } else if (data instanceof Error) {
             result.message = data.message;
-            result.stack = this.trimErrorStack(data, errorStack);
+            result.stack = trimErrorStack(data, errorStack);
         }   
         if(chain){
             result.chain = chain;
         }
 
         const workId = this.cls.get('workId');
-        await this.managerService.logTask(context, result, Task.LogLevel.ERROR, workId);
+        await this.manager.logTask(taskId, Log.Level.ERROR, Task.ExecutionType[exeType], result, workId);
     }
 
-    // HTTP context
-    // manager service에서 exception으로 flow control
+    // HTTP CONTEXT
     async triggerTask(data: TaskStartRequestDTO): Promise<string> {
-        const { domain, task, taskType } = data;
-    
-        const taskId = { domain, task, taskType }
-        this.managerService.isValidTask(taskId)
-        // await this.managerService.test();
-        this.managerService.isRunning(taskId)
-        this.managerService.isActivated(taskId)
-    
-        if(typeof this[task] === 'function') {
-            this[task](taskType);
-            return `${domain}:${task} 시작 요청에 성공했습니다.`
-        } else {
-            throw new NotFoundException(`${domain}:${task}를 찾을 수 없습니다.`)
+        const { domain, service, task } = data;
+        const taskId = TaskId.convertToTaskId(domain, service, task);
+        
+        if(!this.manager.isValidTask({ taskId, exeType: Task.ExecutionType.TRIGGER })){
+            throw new NotFoundException(`Task not found`)
+        }
+        if(this.manager.isRunning({ taskId, exeType: Task.ExecutionType.TRIGGER })){
+            throw new ConflictException(`Task is already running`)
+        }
+        if(typeof this[task] === 'function'){
+            this[task]('TRIGGER');
+            return `${taskId} started`
+        }else {
+            throw new InternalServerErrorException(`Cannot trigger ${domain}:${service}:${task}`);
         }
     }
-    
-    // HTTP context
-    // manager service에서 exception으로 flow control
-    async activateTask(data: TaskActivateRequestDTO): Promise<string> {
-        const { domain, task, taskType, active } = data;
-    
-        this.managerService.isValidTask({ domain, task, taskType: Task.TaskType.TRIGGER})
-        this.managerService.controlTask({domain, task, taskType}, active);
-    
-        return `${domain}:${task}:${taskType} ${active ? '활성화' : '비활성화'} 요청에 성공했습니다.`
-    }
-
-    private trimErrorStack(error: Error, numberOfLines: number): string[] {
-        const stackLines = error.stack?.split('\n') || [];
-        return stackLines.slice(0, numberOfLines)
-    }
-  }
+}

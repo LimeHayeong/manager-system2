@@ -21,9 +21,11 @@ import { Response } from 'express'
       // console.log('httpExceptionFilter');
 
       const errorResponse: ApiError = {
-        success: false,
-        statusCode: status,
-        message: err.message,
+        code: status,
+        payload: {
+            message: err.message ? err.message : null,
+            error: err.error ? err.error : null
+        }
       }
   
       if (typeof err !== 'string' && err.statusCode === 400) {

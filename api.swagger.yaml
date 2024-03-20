@@ -1,0 +1,734 @@
+openapi: 3.0.2
+info:
+  title: Manager system
+  description: Realtime monitoring, control, and log query system
+  version: 1.0.0
+# servers:
+#   - url: https://petstore3.swagger.io/api/v3
+tags:
+  - name: control
+    description: task controller
+  - name: log
+    description: log query with filtering
+  - name: statistic
+    description: get statistic data
+ 
+paths:
+  /${domain}/${service}/${task}/start:
+    post:
+      tags:
+        - control
+      summary: Start task
+      description: task controller
+      operationId: triggerTask
+      responses:
+        '200':
+          description: task 시작 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: ${task} started
+        '404':
+          description: 해당하는 task 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+        '409':
+          description: 이미 task가 실행중
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskAlreadyExecuted:
+                  value:
+                    code: 409
+                    payload:
+                      message: Task already executed
+
+  /work/${work}/start:
+    post:
+      tags:
+        - control
+      summary: (구현 예정)Start work
+      description: work controller
+      operationId: triggerWork
+        
+  /log/ctxid:
+    get:
+      tags:
+        - log
+      summary: Query logs with contextIds
+      description: Query logs with contextIds
+      operationId: getLogsByContextId
+      parameters:
+        - in: query
+          name: contextId
+          required: true
+          schema:
+            type: string
+            example: 0t-9743f479-98ca-468a-8784-35c175652065
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: number
+            example: 1710730840007
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: number
+            example: 1710730860032
+        - in: query
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+            enum:
+              - INFO
+              - WARN
+              - ERROR
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        page: 1
+                        limit: 100
+                        totalCount: 693059
+                        logs:
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                        filteringOptions:
+                          exeTypes: [CRON, TRIGGER, WORK]
+                          levels: [INFO, WARN, ERROR]
+                          chains: []
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found              
+
+  /log/recent:
+    get:
+      tags:
+        - log
+      summary: Get recent logs
+      description: Get recent logs
+      operationId: getRecentLogs
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+            example: domain.a
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+            example: service
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+            example: processRT
+        - in: query
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: beforeCount
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        page: 1
+                        limit: 100
+                        totalCount: 103
+                        logs:
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found
+
+  /log/taskid:
+    get:
+      tags:
+        - log
+      summary: Query logs with taskId
+      description: Query logs with taskId
+      operationId: getLogsByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+            example: domain.a
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+            example: service
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+            example: processRT
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: number
+            example: 1710000000000
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: number
+            example: 1711000000000
+        - in: query
+          name: exeType
+          required: false
+          schema:
+            type: string
+            enum:
+              - CRON
+              - TRIGGER
+              - WORK
+        - in: query
+          name: level
+          required: false
+          schema:
+            type: string
+            enum:
+              - INFO
+              - WARN
+              - ERROR
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: number
+            default: 1
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: number
+            default: 100
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        page: 1
+                        limit: 100
+                        totalCount: 693059
+                        logs:
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_67"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                          - domain: "domain.a"
+                            service: "service"
+                            task: "processRT"
+                            contextId: "0t-9743f479-98ca-468a-8784-35c175652065"
+                            exeType: "CRON"
+                            data:
+                              message: "okay"
+                              chain: "Chain_4"
+                            level: "INFO"
+                            timestamp: 1710730860032
+                        filteringOptions:
+                          exeTypes: [CRON, TRIGGER, WORK]
+                          levels: [INFO, WARN, ERROR]
+                          chains: []
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                LogsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Logs not found
+
+  /stat/exe/ctxid:
+    get:
+      tags:
+        - statistic
+      summary: (Work에 사용 예정)Get exe-statistic data by contextId
+
+  /stat/exe/taskid:
+    get:
+      tags:
+        - statistic
+      summary: Get exe-statistic data by taskId
+      description: Get statistic data in execution level by taskId
+      operationId: getExeStatisticByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+            example: domain.a
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+            example: SecondService
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+            example: processRT
+        - in: query
+          name: pointNumber
+          required: false
+          schema:
+            type: number
+          default: 30
+        - in: query
+          name: pointSize
+          required: false
+          schema:
+            type: number
+            enum:
+              - 10
+              - 30
+              - 50
+            default: 10
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data:
+                        domain: domain.a
+                        service: service
+                        pointNumber: 30
+                        pointSize: 10
+                        pointData:
+                          - from: 1710469270496
+                            to: 1710469759020
+                            info: 1656
+                            warn: 1513
+                            error: 0
+                          - from: 1710469760002
+                            to: 1710470040014
+                            info: 6237
+                            warn: 4866
+                            error: 0
+        '400':
+          description: 잘못된 옵션 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                InvalidPointNumber:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point number
+                InvalidPointSize:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point size
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                ExeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task exe stats not found
+
+  /stat/time/ctxid:
+    get:
+      tags:
+        - statistic
+      summary: (Work에 사용 예정)Get time-statistic data by contextId
+
+  /stat/time/taskid:
+    get:
+      tags:
+        - statistic
+      summary: Get time-statistic data by taskId
+      description: Get statistic data in time level by taskId
+      operationId: getTimeStatisticByTaskId
+      parameters:
+        - in: query
+          name: domain
+          required: true
+          schema:
+            type: string
+            example: domain.d
+        - in: query
+          name: service
+          required: false
+          schema:
+            type: string
+            example: service
+        - in: query
+          name: task
+          required: false
+          schema:
+            type: string
+            example: processRT
+        - in: query
+          name: pointNumber
+          required: false
+          schema:
+            type: number
+          default: 168
+        - in: query
+          name: unitTime
+          required: false
+          schema:
+            type: string
+            enum:
+              - 30m
+              - 1h
+              - 4h
+              - 6h
+              - 12h
+              - 24h
+            default: 4h
+      responses:
+        '200':
+          description:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    code: 200
+                    payload:
+                      message: null
+                      data: 
+                        domain: domain.d
+                        service: service
+                        task: processRT
+                        pointNumber: 168
+                        unitTime: 4h
+                        pointData:
+                          - from: 1710468000000
+                            to: 1710482400000
+                            info: 165712
+                            warn: 164523
+                            error: 0
+                          - from: 1710482400000
+                            to: 1710496800000
+                            info: 115971
+                            warn: 111477
+                            error: 0
+        '400':
+          description: 잘못된 옵션 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                InvalidPointNumber:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid point number
+                InvalidUnitTime:
+                  value:
+                    code: 400
+                    payload:
+                      message: Invalid unit time
+        '404':
+          description: 해당하는 데이터나 찾는 데이터가 없음.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                TaskNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Task not found
+                TimeStatsNotFound:
+                  value:
+                    code: 404
+                    payload:
+                      message: Time exe stats not found
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - code
+        - payload
+      properties:
+        code:
+          type: integer
+          format: int32
+        payload:
+          type: object
+          required:
+            - message
+            - data
+          properties:
+            message:
+              type: string
+              nullable: true
+            data:
+              type: object
+              nullable: true
+
+    ApiError:
+      type: object
+      required:
+        - code
+        - payload
+      properties:
+        code:
+          type: integer
+          format: int32
+        payload:
+          type: object
+          required:
+            - message
+            - error
+          properties:
+            message:
+              type: string
+              nullable: true
+            error:
+              oneOf:
+                - type: string
+                - type: array
+                  items:
+                    type: string
+                - type: null
+    
+    Log:
+      type: object
+      properties:
+        taskId: string;
+        contextId:
+          type: array
+          items:
+            type: string
+        level: string
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              nullable: true
+            chain:
+              type: string
+              nullable: true
+            stack:
+              type: array
+              itmes:
+                type: string
+              nullable: true
+        timestamp: number
+    
+
+            
+
+      

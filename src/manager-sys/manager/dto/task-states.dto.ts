@@ -1,17 +1,19 @@
 import { Task } from "src/manager-sys/types/task";
 
-export class TaskStatesNoLogsDTO {
+export class TaskStatesDTO {
     taskStates: Task.TaskState[];
-    workStates: workStatesDTO[];
+    // TODO: workstates
+    workStates: any;
 }
 
-class workStatesDTO implements Task.IWorkIdentity {
-    work: string;
-    workType: Task.TaskType;
+export class DeSerializedTaskState {
+    domain: string;
+    service: string;
+    task: string;
+    exeType: string;
     contextId: string;
-    status: Task.TaskStatus;
+    status: Task.Status;
     updatedAt: number;
     startAt: number;
     endAt: number;
-    taskList: Task.TaskState[];
 }
