@@ -101,10 +101,10 @@ export class StatisticService implements OnModuleInit {
     }
 
     public async getExeStatisticByTaskId(query: ViExeRequestbyTaskIdDTO): Promise<ViExeResponsebyTaskIdDTO> {
-        const { domain, service, task, pointNumber = 30 as number, pointSize = 10 } = query;
+        const { domain, service, task, pointNumber = 30 as number, pointSize = 10 as number } = query;
 
         if(pointNumber > 168 || pointNumber < 0) throw new BadRequestException('Invalid point number')
-        if(!([10, 30, 50].includes(pointSize))) throw new BadRequestException('Invalid point size')
+        if(pointSize > 50 || pointSize < 0) throw new BadRequestException('Invalid point size')
 
         const conditions = QueryBuilder.taskIdConditionBuilder(domain, service, task);
         

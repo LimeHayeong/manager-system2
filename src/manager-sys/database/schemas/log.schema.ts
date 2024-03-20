@@ -8,5 +8,5 @@ export const LogSchema = new mongoose.Schema({
     exeType: { type: String, required: true, enum: Object.values(Task.ExecutionType) },
     data: mongoose.Schema.Types.Mixed,
     level: { type: String, required: true, enum: Object.values(Log.Level) },
-    timestamp: { type: Number, required: true, index: -1 },
+    timestamp: { type: Number, required: true, index: -1},
 });

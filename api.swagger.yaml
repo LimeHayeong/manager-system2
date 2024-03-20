@@ -45,7 +45,7 @@ paths:
                   value:
                     code: 404
                     payload:
-                      message: ${task} not found
+                      message: Task not found
         '409':
           description: 이미 task가 실행중
           content:
@@ -57,7 +57,7 @@ paths:
                   value:
                     code: 409
                     payload:
-                      message: ${task} already executed
+                      message: Task already executed
 
   /work/${work}/start:
     post:

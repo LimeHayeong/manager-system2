@@ -15,7 +15,7 @@ export interface ViTimeResponsebyTaskIdDTO extends taskId, ViTimeOptions {
 
 export interface ViExeOptions {
     pointNumber?: number;
-    pointSize?: 10 | 30 | 50;
+    pointSize?: number; // 10, 30, 50
 }
 
 export interface ViTimeOptions {

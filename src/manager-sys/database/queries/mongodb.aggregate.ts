@@ -1,7 +1,7 @@
 export function timeStatAggregationPipeline(firstId, lastId): any[] {
   return [
     { $match: { _id: { $gte: firstId, $lte: lastId } } },
-    { $sort: { timestamp: 1}},
+    { $sort: { timestamp: -1}},
             {
                 $addFields: {
                     normalizedTimestamp: {
@@ -69,7 +69,7 @@ export function timeStatAggregationPipeline(firstId, lastId): any[] {
 
 export function exeStatAggregationPipeline(firstId, lastId): any[] { 
   return [{ $match: { _id: { $gte: firstId, $lte: lastId } } },
-    { $sort: { timestamp: 1 } },
+    { $sort: { timestamp: -1 } },
     {
         $group: {
           _id: "$contextId",
@@ -100,7 +100,7 @@ export function exeStatAggregationPipeline(firstId, lastId): any[] {
 export function viExeAggregationPipeline(conditions: object, pointSize: number, i: number): any[] {
   return [
     { $match: conditions },
-    { $sort: { startAt: 1 } },
+    { $sort: { startAt: -1 } },
     { $skip: pointSize * i },
     { $limit: pointSize },
     {
@@ -130,7 +130,7 @@ export function viTimeAggregationPipeline(conditions: object, from: number, to: 
   return [
     { $match: conditions },
     { $match: { timestamp: { $gte: from, $lt: to } }},
-    { $sort: { timestamp: 1 }},
+    { $sort: { timestamp: -1 }},
     {
       $group: {
         _id: null,

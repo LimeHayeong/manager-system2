@@ -44,7 +44,7 @@ export namespace QueryBuilder {
     
         return conditions;
     }
-    
+
     // 배열일 때만 처리
     function generateTaskIdCombinations(domain: string, service: string, task: string | string[]): string[] {
         const taskIdCombinations = [];

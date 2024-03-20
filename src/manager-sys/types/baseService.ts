@@ -86,10 +86,10 @@ export abstract class BaseService {
         const taskId = TaskId.convertToTaskId(domain, service, task);
         
         if(!this.manager.isValidTask({ taskId, exeType: Task.ExecutionType.TRIGGER })){
-            throw new NotFoundException(`${domain} not found`)
+            throw new NotFoundException(`Task not found`)
         }
         if(this.manager.isRunning({ taskId, exeType: Task.ExecutionType.TRIGGER })){
-            throw new ConflictException(`${taskId} is already running`)
+            throw new ConflictException(`Task is already running`)
         }
         if(typeof this[task] === 'function'){
             this[task]('TRIGGER');

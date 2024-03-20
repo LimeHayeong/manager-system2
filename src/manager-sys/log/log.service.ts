@@ -1,12 +1,14 @@
 import { Inject, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ILogDoc } from '../database/dto/log.interface';
 import { Model } from 'mongoose';
-import { IExeStatisticDoc } from '../database/dto/statistic.interface';
+import { IExeStatisticDoc, ITimeStatisticDoc } from '../database/dto/statistic.interface';
 import { TaskId } from '../types/taskId';
 import { LogQuerybyContextIdData, LogQuerybyTaskIdData, LogResultDTO, RecentLogQueryDTO, ResultLog } from './dto/log-query.dto';
 import { QueryBuilder } from '../database/queries/mongodb.query.builder';
+import { Cron } from '@nestjs/schedule';
 
 const difference: number = 1000 * 60 * 60 * 1;
+const expireRange: number = 1000 * 60 * 60 * 24 * 30;
 
 @Injectable()
 export class LogService implements OnModuleInit {
@@ -15,6 +17,8 @@ export class LogService implements OnModuleInit {
         private logModel: Model<ILogDoc>,
         @Inject('EXE_STATISTIC_MODEL')
         private exeStatisticModel: Model<IExeStatisticDoc>,
+        @Inject('TIME_STATISTIC_MODEL')
+        private timeStatisticModel: Model<ITimeStatisticDoc>,
     ) {
     }
 
@@ -37,6 +41,21 @@ export class LogService implements OnModuleInit {
         // });
     }
 
+    // 30일 지난 로그 삭제
+    // 6시간마다 1시 3분 27초에 수행.
+    @Cron('27 3 1/6 * * *')
+    private async removeExpiredLogs() {
+        const threshold = Date.now() - expireRange;
+        try {
+            await this.logModel.deleteMany({ timestamp: { $lte: threshold } });
+            await this.exeStatisticModel.deleteMany({ endAt: { $lte: threshold } });
+            await this.timeStatisticModel.deleteMany({ timestamp: { $lte: threshold } });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Log가 1000개 넘어가는지 확인 후, 1000개 넘어갈 시 1001개로 표기.
     public async getRecentLogs(query: RecentLogQueryDTO): Promise<LogResultDTO> {
         const { domain, service, task, exeType, beforeCount = 1, page = 1, limit = 100 } = query;
 
@@ -68,18 +87,23 @@ export class LogService implements OnModuleInit {
         const cond2WithOptions = QueryBuilder.filterOptionsConditionBuilder(conditions2, exeType, null, null);
         // console.log(cond2WithOptions)
 
-        const totalCountPromise = this.logModel.countDocuments(cond2WithOptions);
-        const logsPromise = this.logModel.find(cond2WithOptions)
-            .sort({ timestamp: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .select('taskId contextId exeType level data timestamp')
-            .lean()
-            .exec()
+        const exceed1000 = await this.checkLogCountExceeds1000(cond2WithOptions);
+        const promiseArray = [];
+        promiseArray.push(
+            this.logModel.find(cond2WithOptions)
+                .sort({ timestamp: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .select('taskId contextId exeType level data timestamp')
+                .lean()
+                .exec())
+        if(!exceed1000) {
+            promiseArray.push(this.logModel.countDocuments(cond2WithOptions))
+        }
 
-        const [totalCount, queryData] = await Promise.all([totalCountPromise, logsPromise])
+        const [ queryData, totalCount ] = await Promise.all(promiseArray);
 
-        if(totalCount === 0) {
+        if(queryData.length === 0) {
             throw new NotFoundException(`Logs not found`)
         }
 
@@ -92,13 +116,11 @@ export class LogService implements OnModuleInit {
         return {
             page: Number(page),
             limit: Number(limit),
-            totalCount: Number(totalCount),
+            totalCount: exceed1000 ? 1001 : totalCount,
             logs: logs
         }
     }
 
-    // TODO: 이렇게 하는 게 맞긴한데, startAt이 지정이 안되어 있으니까 전체를 parsing하느라 성능이 떨어짐.
-    // 먼저 contextId에서 startAt, endAt 리스트를 뽑아오는게 낫지 않을까? from, to 오차에 주의하긴 해야함.
     public async getLogsByTaskId(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
         const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
 
@@ -113,23 +135,28 @@ export class LogService implements OnModuleInit {
         
         const condWithOptions = QueryBuilder.filterOptionsConditionBuilder(conditions, exeType, level, chain);
 
-        const totalCountPromise = this.logModel.countDocuments(condWithOptions);
-        const logsPromise = this.logModel
-            .find(condWithOptions)
-            .sort({ timestamp: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .select('taskId contextId exeType level data timestamp')
-            .lean()
-            .exec();
+        const exceed1000 = await this.checkLogCountExceeds1000(condWithOptions);
+        const promiseArray = [];
+        promiseArray.push(
+            this.logModel.find(condWithOptions)
+                .sort({ timestamp: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .select('taskId contextId exeType level data timestamp')
+                .lean()
+                .exec())
+        if(!exceed1000) {
+            promiseArray.push(this.logModel.countDocuments(condWithOptions))
+        }
 
-        const [ totalCount, queryData ] = await Promise.all([totalCountPromise, logsPromise]);
 
-        const logs = this.transformDocToLog(queryData);
+        const [ queryData, totalCount ] = await Promise.all(promiseArray);
 
-        if(totalCount === 0) {
+        if(queryData.length === 0) {
             throw new NotFoundException(`Logs not found`)
         }
+
+        const logs = this.transformDocToLog(queryData);
 
         // console.log(totalCount)
         // logs.forEach(log => console.log(log));
@@ -139,11 +166,13 @@ export class LogService implements OnModuleInit {
         return {
             page: Number(page), 
             limit: Number(limit),
-            totalCount: Number(totalCount),
+            totalCount: exceed1000 ? 1001 : totalCount,
             logs: logs
         };
     }
 
+    // testing
+    // contextId에서 start end를 뽑아 병렬로 찾는 방식
     public async getLogsByTaskIdAdvanced(query: LogQuerybyTaskIdData): Promise<LogResultDTO> {
         // console.log(query)
         const { domain, service, task, from, to, exeType, level, chain, page = 1, limit = 100} = query;
@@ -297,6 +326,19 @@ export class LogService implements OnModuleInit {
             const { domain, service, task } = TaskId.convertFromTaskId(log.taskId);
             return { domain, service, task, ...remain };
         });
+    }
+
+    // 조건 자체가 복잡하면 이 케이스가 오래걸릴 수 있긴 함.
+    private async checkLogCountExceeds1000(condition: object): Promise<boolean> {
+        const result = await this.logModel
+            .find(condition)
+            .sort({ timestamp: -1 })
+            .skip(1000)
+            .limit(1)
+            .lean()
+            .exec()
+
+        return result.length === 1;        
     }
 }
 

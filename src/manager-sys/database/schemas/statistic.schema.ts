@@ -4,12 +4,12 @@ export const ExeStatisticSchema = new mongoose.Schema({
     taskId: [{ type: String, required: true}],
     contextId: { type: String, required: true, index: 1 },
     data: mongoose.Schema.Types.Mixed,
-    startAt: { type: Number, required: true, index: -1 },
+    startAt: { type: Number, required: true, index: -1},
     endAt: { type: Number, required: true },
 });
 
 export const TimeStatisticSchema = new mongoose.Schema({
-    timestamp: { type: Number, required: true, index: -1 },
+    timestamp: { type: Number, required: true, index: -1},
     taskId: { type: String, required: true, index: 1 },
     data: mongoose.Schema.Types.Mixed,
 });
